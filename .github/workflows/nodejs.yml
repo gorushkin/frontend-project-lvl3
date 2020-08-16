@@ -22,10 +22,3 @@ jobs:
       - run: make lint
         env:
           CI: true
-      - name: Test & publish code coverage
-        uses: paambaati/codeclimate-action@v2.4.0
-        env:
-          CC_TEST_REPORTER_ID: 0d9e2c59230390f6ae9c686369b4afdce14a536f661d126d2309300358bd7918
-        with:
-          coverageCommand: make test-coverage
-          debug: true
