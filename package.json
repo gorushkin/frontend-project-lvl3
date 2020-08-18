@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx webpack-dev-server",
+    "build": "rm -rf dist && npx webpack"
   },
   "repository": {
     "type": "git",
@@ -33,8 +35,11 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
+    "axios": "^0.19.2",
     "bootstrap": "^4.5.2",
     "jquery": "^3.5.1",
-    "popper.js": "^1.16.1"
+    "on-change": "^2.1.2",
+    "popper.js": "^1.16.1",
+    "yup": "^0.29.3"
   }
 }
