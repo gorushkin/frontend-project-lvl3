@@ -4,11 +4,12 @@ import validator from './validator';
 const app = () => {
   console.log('app start');
   const form = document.querySelector('.rss-form');
+  const input = form.querySelector('input');
 
   const state = {
     value: '',
     list: [],
-    isValid: false,
+    isValid: undefined,
   };
 
   const watchedState = onChange(state, (path, value, previousValue, name) => {
@@ -24,15 +25,22 @@ const app = () => {
         break;
       }
       case 'isValid': {
-        if (state.isValid) watchedState.list.push(state.value);
-        form.reset();
-        watchedState.isValid = false;
-        onChange.target(watchedState).value = '';
-        console.log(state);
+        console.log(input);
+        if (state.isValid) {
+          watchedState.list.push(state.value);
+          watchedState.isValid = undefined;
+          form.reset();
+          onChange.target(watchedState).value = '';
+          input.classList.remove('invalid');
+          console.log('change input color to none');
+        } else {
+          console.log('change input color to red');
+          input.classList.add('invalid');
+        }
         break;
       }
       case 'list': {
-        return true;
+        console.log(state);
         break;
       }
       default: {
