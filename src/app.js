@@ -14,8 +14,7 @@ const app = () => {
   const watchedState = onChange(state, (path, value, previousValue, name) => {
     switch (path) {
       case 'value': {
-        validator(state.value).then((result) => {
-          console.log('valiatorValue', result);
+        validator(state).then((result) => {
           if (result) {
             watchedState.isValid = true;
           } else {
@@ -25,7 +24,6 @@ const app = () => {
         break;
       }
       case 'isValid': {
-        console.log('changed valid flag');
         if (state.isValid) watchedState.list.push(state.value);
         form.reset();
         watchedState.isValid = false;
