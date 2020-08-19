@@ -3,6 +3,7 @@ import validator from './validator';
 
 const app = () => {
   console.log('app start');
+  const form = document.querySelector('.rss-form');
 
   const state = {
     value: '',
@@ -14,6 +15,7 @@ const app = () => {
     switch (path) {
       case 'value': {
         validator(state.value).then((result) => {
+          console.log('valiatorValue', result);
           if (result) {
             watchedState.isValid = true;
           } else {
@@ -23,7 +25,11 @@ const app = () => {
         break;
       }
       case 'isValid': {
+        console.log('changed valid flag');
         if (state.isValid) watchedState.list.push(state.value);
+        form.reset();
+        watchedState.isValid = false;
+        onChange.target(watchedState).value = '';
         console.log(state);
         break;
       }
@@ -37,12 +43,9 @@ const app = () => {
     }
   });
 
-  const form = document.querySelector('.rss-form');
-
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    form.reset();
     watchedState.value = formData.get('url');
   });
 };
