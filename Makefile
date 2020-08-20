@@ -1,6 +1,9 @@
 develop:
 	npx webpack-dev-server
 
+start:
+	npx webpack-dev-server
+
 install:
 	npm install
 

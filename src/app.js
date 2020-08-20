@@ -1,5 +1,24 @@
 import onChange from 'on-change';
+import axios from 'axios';
 import validator from './validator';
+import parseData from './parseData';
+
+const getData = (feedUrl) => {
+  const getUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
+  const data = axios.get(getUrl(feedUrl));
+  return data;
+};
+
+const addFeed = (url, watchedState) => {
+  console.log('feedUrl', url);
+  getData(url).then((response) => {
+    const { data } = response;
+    const { status } = response;
+    console.log('status: ', status);
+    const feed = parseData(data);
+    watchedState.feeds.push(feed);
+  });
+};
 
 const app = () => {
   console.log('app start');
@@ -10,6 +29,7 @@ const app = () => {
     value: '',
     list: [],
     isValid: undefined,
+    feeds: [],
   };
 
   const watchedState = onChange(state, (path) => {
@@ -25,22 +45,23 @@ const app = () => {
         break;
       }
       case 'isValid': {
-        console.log(input);
         if (state.isValid) {
           watchedState.list.push(state.value);
           watchedState.isValid = undefined;
           form.reset();
+          addFeed(state.value, watchedState);
           onChange.target(watchedState).value = '';
           input.classList.remove('invalid');
-          console.log('change input color to none');
         } else {
-          console.log('change input color to red');
           input.classList.add('invalid');
         }
         break;
       }
       case 'list': {
-        console.log(state);
+        break;
+      }
+      case 'feeds': {
+        console.log(state.feeds);
         break;
       }
       default: {
