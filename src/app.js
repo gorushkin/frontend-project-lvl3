@@ -12,7 +12,7 @@ const app = () => {
     isValid: undefined,
   };
 
-  const watchedState = onChange(state, (path, value, previousValue, name) => {
+  const watchedState = onChange(state, (path) => {
     switch (path) {
       case 'value': {
         validator(state).then((result) => {
