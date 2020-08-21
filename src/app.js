@@ -1,24 +1,7 @@
 import onChange from 'on-change';
-import axios from 'axios';
 import validator from './validator';
-import parseData from './parseData';
-
-const getData = (feedUrl) => {
-  const getUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
-  const data = axios.get(getUrl(feedUrl));
-  return data;
-};
-
-const addFeed = (url, watchedState) => {
-  console.log('feedUrl', url);
-  getData(url).then((response) => {
-    const { data } = response;
-    const { status } = response;
-    console.log('status: ', status);
-    const feed = parseData(data);
-    watchedState.feeds.push(feed);
-  });
-};
+import renderFeed from './renderFeed';
+import addFeed from './addFeed';
 
 const app = () => {
   console.log('app start');
@@ -30,6 +13,7 @@ const app = () => {
     list: [],
     isValid: undefined,
     feeds: [],
+    items: [],
   };
 
   const watchedState = onChange(state, (path) => {
@@ -61,7 +45,17 @@ const app = () => {
         break;
       }
       case 'feeds': {
-        console.log(state.feeds);
+        renderFeed(state);
+        // console.log(state.feeds);
+        break;
+      }
+      case 'items': {
+        // console.log(state.items);
+        renderFeed(state);
+        // console.log(state.items);
+        // console.log(previousValue);
+        // console.log(value);
+        // watchedState.items = [...previousValue, ...value];
         break;
       }
       default: {
