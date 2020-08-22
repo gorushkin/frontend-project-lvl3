@@ -1,5 +1,3 @@
-import { divide } from 'lodash';
-
 export default ({ feeds, items }) => {
   const container = document.querySelector('.feeds');
   container.innerHTML = '';
