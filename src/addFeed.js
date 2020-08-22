@@ -11,17 +11,9 @@ const addFeed = (url, watchedState) => {
   const state = watchedState;
   getData(url).then((response) => {
     const { data } = response;
-    const { status } = response;
-    console.log('status: ', status);
-    if (status !== 200) {
-      state.message = 'Network error';
-      state.isValid = false;
-    } else {
-      console.log('status: ', status);
-      const { feed, items } = parseData(data);
-      state.feeds.push(feed);
-      state.items = [...items, ...state.items];
-    }
+    const { feed, items } = parseData(data);
+    state.feeds.push(feed);
+    state.items = [...items, ...state.items];
   });
 };
 

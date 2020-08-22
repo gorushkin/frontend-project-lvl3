@@ -1,9 +1,18 @@
 import onChange from 'on-change';
+import i18next from 'i18next';
 import validator from './validator';
 import { renderFeed, renderStatus } from './renderFeed';
 import addFeed from './addFeed';
+import { en } from './locales';
 
 const app = () => {
+  const resources = en;
+  i18next.init({
+    lng: 'en',
+    debug: true,
+    resources,
+  });
+
   const form = document.querySelector('.rss-form');
   const input = form.querySelector('input');
 
@@ -19,7 +28,7 @@ const app = () => {
   const watchedState = onChange(state, (path) => {
     switch (path) {
       case 'value': {
-        validator(state, watchedState);
+        validator(state, watchedState, i18next);
         break;
       }
       case 'isValid': {
@@ -40,7 +49,7 @@ const app = () => {
       }
       case 'feeds': {
         renderFeed(state);
-        watchedState.message = 'Rss has been loaded';
+        watchedState.message = i18next.t('loaded');
         break;
       }
       case 'items': {

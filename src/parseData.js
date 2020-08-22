@@ -22,6 +22,5 @@ export default (data) => {
     };
     items.push(item);
   });
-  // console.log(items);
   return { feed, items };
 };

@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-export default ({ value: url, list }, watchedState) => {
+export default ({ value: url, list }, watchedState, i18next) => {
   const state = watchedState;
   const schema = yup.string().url();
   schema.isValid(url).then((result) => {
@@ -8,14 +8,14 @@ export default ({ value: url, list }, watchedState) => {
       const isUrlInList = list.includes(url);
       if (isUrlInList) {
         state.isValid = false;
-        state.message = 'Rss already exists';
+        state.message = i18next.t('exist');
       } else {
         state.isValid = true;
-        state.message = 'Rss added';
+        state.message = i18next.t('added');
       }
     } else {
       state.isValid = false;
-      state.message = 'Rss is invalid';
+      state.message = i18next.t('invalid');
     }
   });
 };
