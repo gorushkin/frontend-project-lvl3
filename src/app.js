@@ -1,10 +1,9 @@
 import onChange from 'on-change';
 import validator from './validator';
-import renderFeed from './renderFeed';
+import { renderFeed, renderStatus } from './renderFeed';
 import addFeed from './addFeed';
 
 const app = () => {
-  console.log('app start');
   const form = document.querySelector('.rss-form');
   const input = form.querySelector('input');
 
@@ -14,18 +13,13 @@ const app = () => {
     isValid: undefined,
     feeds: [],
     items: [],
+    message: '',
   };
 
   const watchedState = onChange(state, (path) => {
     switch (path) {
       case 'value': {
-        validator(state).then((result) => {
-          if (result) {
-            watchedState.isValid = true;
-          } else {
-            watchedState.isValid = false;
-          }
-        });
+        validator(state, watchedState);
         break;
       }
       case 'isValid': {
@@ -46,19 +40,19 @@ const app = () => {
       }
       case 'feeds': {
         renderFeed(state);
-        // console.log(state.feeds);
+        watchedState.message = 'Rss has been loaded';
         break;
       }
       case 'items': {
-        // console.log(state.items);
         renderFeed(state);
-        // console.log(state.items);
-        // console.log(previousValue);
-        // console.log(value);
-        // watchedState.items = [...previousValue, ...value];
+        break;
+      }
+      case 'message': {
+        renderStatus(state);
         break;
       }
       default: {
+        console.log(path);
         console.log('error');
       }
     }

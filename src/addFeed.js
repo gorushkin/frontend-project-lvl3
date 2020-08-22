@@ -9,14 +9,19 @@ const getData = (feedUrl) => {
 
 const addFeed = (url, watchedState) => {
   const state = watchedState;
-  console.log('feedUrl', url);
   getData(url).then((response) => {
     const { data } = response;
     const { status } = response;
     console.log('status: ', status);
-    const { feed, items } = parseData(data);
-    state.feeds.push(feed);
-    state.items = [...items, ...state.items];
+    if (status !== 200) {
+      state.message = 'Network error';
+      state.isValid = false;
+    } else {
+      console.log('status: ', status);
+      const { feed, items } = parseData(data);
+      state.feeds.push(feed);
+      state.items = [...items, ...state.items];
+    }
   });
 };
 
