@@ -49,6 +49,7 @@ const app = () => {
       }
       case 'feeds': {
         renderFeed(state);
+        console.log(state.feeds);
         watchedState.message = i18next.t('loaded');
         break;
       }
