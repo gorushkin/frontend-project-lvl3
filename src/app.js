@@ -64,7 +64,7 @@ const app = () => {
         break;
       }
       default: {
-        console.log(path);
+        throw new Error(`Unknown order state: '${path}'!`);
       }
     }
   });
