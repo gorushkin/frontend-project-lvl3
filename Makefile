@@ -11,6 +11,10 @@ build:
 	rm -rf dist
 	NODE_ENV=production npx webpack
 
+build-dev:
+	rm -rf dist
+	npx webpack
+
 test:
 	npm test
 
