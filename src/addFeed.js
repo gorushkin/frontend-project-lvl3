@@ -1,19 +1,6 @@
 import axios from 'axios';
-import parseData from './parseData';
 import _ from 'lodash';
-
-const findNewItemsInFeed = (feed, items, watchedState) => {
-  const { id } = feed;
-  console.log('id: ', id);
-  // const lastFeed
-  // const { feedId } = feed;
-  const newItems = items.filter((item) => {
-    // item.pubDate > feedPubDate;
-    // console.log('feedPubDate: ', feedPubDate);
-    // console.log('item.pubDate: ', item.pubDate);
-  });
-  // console.log('newItems: ', newItems);
-};
+import parseData from './parseData';
 
 const getData = (feedUrl) => {
   const getUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
@@ -21,30 +8,35 @@ const getData = (feedUrl) => {
   return data;
 };
 
+const getlastUpdateDate = (items, lastFeedUpdateDate) => {
+  if (items.length === 0) return lastFeedUpdateDate;
+  let newFeedUpdateDate = items[0].pubDate;
+  for (let i = 1; i < items.length; i += 1) {
+    if (items[i].pubDate > newFeedUpdateDate) {
+      newFeedUpdateDate = items[i].pubDate;
+    }
+  }
+  return newFeedUpdateDate;
+};
+
 const updateFeed = (id, state) => {
-  // const state = watchedState;
+  const watchedState = state;
   const { feeds } = state;
-  const [currentFeed] = feeds.filter((feed) => {
-    return feed.id === id;
-  });
-  const lastFeedUpdate = currentFeed.pubDate;
-  const url = currentFeed.url;
+  const feedIndex = _.findIndex(feeds, { id });
+  const currentFeed = feeds[feedIndex];
+  const lastFeedUpdateDate = currentFeed.pubDate;
+  const { url } = currentFeed;
   getData(url).then((response) => {
     const { data } = response;
     const { items } = parseData(data);
     const onlyNewItems = items
-      .filter((item) => {
-        return item.pubDate > lastFeedUpdate;
-      })
-      .map((item) => {
-        item.id = _.uniqueId();
-        item.feedId = id;
-      });
-    console.log(onlyNewItems);
-    // state.items = [...onlyNewItems, ...state.items];
-    // console.log(state.items);
+      .filter((item) => item.pubDate > lastFeedUpdateDate)
+      .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+    const newFeedUpdateDate = getlastUpdateDate(onlyNewItems, lastFeedUpdateDate);
+    watchedState.items = [...onlyNewItems, ...state.items];
+    watchedState.feeds[feedIndex].pubDate = newFeedUpdateDate;
   });
-  setTimeout(() => updateFeed(id, state), 5000);
+  setTimeout(() => updateFeed(id, state), 15000);
 };
 
 const addFeed = (url, watchedState) => {
@@ -52,15 +44,11 @@ const addFeed = (url, watchedState) => {
   getData(url).then((response) => {
     const { data } = response;
     const { feed, items } = parseData(data);
-    feed.id = _.uniqueId();
-    feed.url = url;
-    items.map((item) => {
-      item.id = _.uniqueId();
-      item.feedId = feed.id;
-    });
-    state.feeds.push(feed);
-    state.items = [...items, ...state.items];
-    updateFeed(feed.id, state);
+    const id = _.uniqueId();
+    const itemsWithId = items.map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+    state.feeds.push({ ...feed, url, id });
+    state.items = [...itemsWithId, ...state.items];
+    updateFeed(id, state);
   });
 };
 

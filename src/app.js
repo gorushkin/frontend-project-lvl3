@@ -28,7 +28,7 @@ const app = () => {
   const watchedState = onChange(state, (path) => {
     switch (path) {
       case 'value': {
-        validator(state, watchedState, i18next);
+        validator(watchedState, i18next);
         break;
       }
       case 'isValid': {
@@ -49,7 +49,6 @@ const app = () => {
       }
       case 'feeds': {
         renderFeed(state);
-        console.log(state.feeds);
         watchedState.message = i18next.t('loaded');
         break;
       }
@@ -61,9 +60,11 @@ const app = () => {
         renderStatus(state);
         break;
       }
+      case 'feeds.0.pubDate': {
+        break;
+      }
       default: {
         console.log(path);
-        console.log('error');
       }
     }
   });

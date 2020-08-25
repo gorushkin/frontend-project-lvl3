@@ -1,7 +1,8 @@
 import * as yup from 'yup';
 
-export default ({ value: url, list }, watchedState, i18next) => {
+export default (watchedState, i18next) => {
   const state = watchedState;
+  const { list, value: url } = state;
   const schema = yup.string().url();
   schema.isValid(url).then((result) => {
     if (result) {

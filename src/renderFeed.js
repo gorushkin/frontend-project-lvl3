@@ -1,13 +1,9 @@
 export const renderStatus = ({ message }) => {
-  console.log(message);
   const feedback = document.querySelector('.feedback');
   feedback.innerHTML = message;
 };
 
 export const renderFeed = ({ feeds, items }) => {
-  console.log('renderFeed');
-  console.log('feeds: ', feeds);
-  console.log('items: ', items);
   const container = document.querySelector('.feeds');
   container.innerHTML = '';
   feeds.forEach(({ title, id }) => {
