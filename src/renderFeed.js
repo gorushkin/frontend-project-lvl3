@@ -1,5 +1,13 @@
-export const renderStatus = ({ message }) => {
+export const renderStatus = ({ isValid, message }) => {
   const feedback = document.querySelector('.feedback');
+  const input = document.querySelector('input');
+  if (isValid) {
+    input.classList.remove('is-invalid');
+    feedback.classList.remove('text-danger');
+  } else {
+    input.classList.add('is-invalid');
+    feedback.classList.add('text-danger');
+  }
   feedback.innerHTML = message;
 };
 

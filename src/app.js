@@ -14,7 +14,6 @@ const app = () => {
   });
 
   const form = document.querySelector('.rss-form');
-  const input = form.querySelector('input');
 
   const state = {
     value: '',
@@ -28,19 +27,15 @@ const app = () => {
   const watchedState = onChange(state, (path) => {
     switch (path) {
       case 'value': {
+        console.log(state.value);
         validator(watchedState, i18next);
         break;
       }
       case 'isValid': {
         if (state.isValid) {
           watchedState.list.push(state.value);
-          watchedState.isValid = undefined;
           form.reset();
           addFeed(state.value, watchedState);
-          onChange.target(watchedState).value = '';
-          input.classList.remove('invalid');
-        } else {
-          input.classList.add('invalid');
         }
         break;
       }
@@ -58,13 +53,14 @@ const app = () => {
       }
       case 'message': {
         renderStatus(state);
+        watchedState.value = '';
         break;
       }
       case 'feeds.0.pubDate': {
         break;
       }
       default: {
-        console.log(path);
+        throw new Error(`Unknown order state: '${path}'!`);
       }
     }
   });
