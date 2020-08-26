@@ -13,7 +13,7 @@ build:
 
 build-dev:
 	rm -rf dist
-	npx webpack
+	npx webpack -d
 
 test:
 	npm test

@@ -13,7 +13,7 @@ module.exports = {
   entry: './src/index.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'js/main.js',
+    filename: process.env.NODE_ENV === 'production' ? 'js/main.js' : 'bundle.js',
   },
   devtool: 'source-map',
   module: {
