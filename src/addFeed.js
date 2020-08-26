@@ -36,7 +36,7 @@ const updateFeed = (id, state) => {
     watchedState.items = [...onlyNewItems, ...state.items];
     watchedState.feeds[feedIndex].pubDate = newFeedUpdateDate;
   });
-  setTimeout(() => updateFeed(id, state), 15000);
+  setTimeout(() => updateFeed(id, state), 5000);
 };
 
 const addFeed = (url, watchedState) => {
