@@ -1,8 +1,10 @@
-/* eslint-disable */
-
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
+function NothingPlugin() {
+  this.apply = () => {};
+}
 
 module.exports = {
   mode: process.env.NODE_ENV || 'development',
@@ -24,12 +26,7 @@ module.exports = {
         use: [
           process.env.NODE_ENV === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
           'css-loader', // translates CSS into CommonJS modules
-          {
-            loader: 'postcss-loader', // Run post css actions
-            options: {
-              plugins: () => [require('precss'), require('autoprefixer')],
-            },
-          },
+          'postcss-loader',
           'sass-loader', // compiles Sass to CSS
         ],
       },
@@ -39,11 +36,11 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html',
     }),
-    new MiniCssExtractPlugin({
-      // Options similar to the same options in webpackOptions.output
-      // both options are optional
-      filename: 'css/[name].css',
-      chunkFilename: '[id].css',
-    }),
+    process.env.NODE_ENV === 'production'
+      ? new MiniCssExtractPlugin({
+          filename: 'css/[name].css',
+          chunkFilename: '[id].css',
+        })
+      : new NothingPlugin(),
   ],
 };
