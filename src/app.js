@@ -6,13 +6,6 @@ import addFeed from './addFeed';
 import { en } from './locales';
 
 const app = () => {
-  const resources = en;
-  i18next.init({
-    lng: 'en',
-    debug: true,
-    resources,
-  });
-
   const form = document.querySelector('.rss-form');
   const input = form.querySelector('input');
 
@@ -76,4 +69,15 @@ const app = () => {
   });
 };
 
-export default app;
+const initLanguagePack = () => {
+  const resources = en;
+  i18next
+    .init({
+      lng: 'en',
+      debug: true,
+      resources,
+    })
+    .then(() => app());
+};
+
+export default initLanguagePack;
