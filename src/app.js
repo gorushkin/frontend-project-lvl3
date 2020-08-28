@@ -1,8 +1,9 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
+import _ from 'lodash';
+import getFeedsFromSource from './getItemssFromSource';
 import validateUrl from './validateUrl';
 import { renderFeed, renderStatus } from './renderFeed';
-import addUrlToFeeds from './addUrlToFeeds';
 import { en } from './locales';
 
 const app = () => {
@@ -21,7 +22,7 @@ const app = () => {
   };
 
   const watchedState = onChange(state, (path) => {
-    console.log(path);
+    // console.log(path);
     switch (path) {
       case 'form.value': {
         validateUrl(watchedState).then((result) => {
@@ -40,17 +41,24 @@ const app = () => {
         break;
       }
       case 'form.isValid': {
-        if (watchedState.form.isValid) addUrlToFeeds(watchedState);
+        if (watchedState.form.isValid) {
+          const { value } = watchedState.form;
+          watchedState.feeds.push({ url: value });
+        }
         break;
       }
       case 'feeds': {
-        // renderFeed(state);
-        console.log(watchedState.feeds);
-        // watchedState.message = i18next.t('loaded');
+        getFeedsFromSource(watchedState).then(([feed, items]) => {
+          const { url } = feed;
+          const feedIndex = _.findIndex(watchedState.feeds, { url });
+          if (url) onChange.target(watchedState).feeds[feedIndex] = feed;
+          watchedState.items = [...watchedState.items, ...items];
+        });
         break;
       }
       case 'items': {
-        renderFeed(state);
+        // renderFeed(state);
+        console.log(watchedState.items);
         break;
       }
       case 'message': {
