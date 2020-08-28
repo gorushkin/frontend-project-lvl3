@@ -1,48 +1,52 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
-import validator from './validator';
+import validateUrl from './validateUrl';
 import { renderFeed, renderStatus } from './renderFeed';
-import addFeed from './addFeed';
+import addUrlToFeeds from './addUrlToFeeds';
 import { en } from './locales';
 
 const app = () => {
   const form = document.querySelector('.rss-form');
-  const input = form.querySelector('input');
+  // const input = form.querySelector('input');
 
   const state = {
-    value: '',
-    list: [],
-    isValid: undefined,
     feeds: [],
     items: [],
-    message: '',
+    form: {
+      value: '',
+      isValid: null,
+      status: '',
+      errorCode: '',
+    },
   };
 
   const watchedState = onChange(state, (path) => {
+    console.log(path);
     switch (path) {
-      case 'value': {
-        validator(watchedState, i18next);
+      case 'form.value': {
+        validateUrl(watchedState).then((result) => {
+          watchedState.form.errorCode = result;
+        });
         break;
       }
-      case 'isValid': {
-        if (state.isValid) {
-          watchedState.list.push(state.value);
-          watchedState.isValid = undefined;
-          form.reset();
-          addFeed(state.value, watchedState);
-          onChange.target(watchedState).value = '';
-          input.classList.remove('invalid');
+      case 'form.errorCode': {
+        if (watchedState.form.errorCode === null) {
+          watchedState.form.isValid = true;
         } else {
-          input.classList.add('invalid');
+          watchedState.form.isValid = false;
         }
+        onChange.target(watchedState).form.isValid = null;
+        onChange.target(watchedState).form.errorCode = '';
         break;
       }
-      case 'list': {
+      case 'form.isValid': {
+        if (watchedState.form.isValid) addUrlToFeeds(watchedState);
         break;
       }
       case 'feeds': {
-        renderFeed(state);
-        watchedState.message = i18next.t('loaded');
+        // renderFeed(state);
+        console.log(watchedState.feeds);
+        // watchedState.message = i18next.t('loaded');
         break;
       }
       case 'items': {
@@ -65,7 +69,7 @@ const app = () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    watchedState.value = formData.get('url');
+    watchedState.form.value = formData.get('url');
   });
 };
 
