@@ -4,11 +4,11 @@ import _ from 'lodash';
 import getFeedsFromSource from './getItemssFromSource';
 import validateUrl from './validateUrl';
 import { renderFeeds, renderStatus } from './renderData';
+import changeFormStatus from './changeFormStatus';
 import { en } from './locales';
 
 const app = () => {
   const form = document.querySelector('.rss-form');
-  // const input = form.querySelector('input');
 
   const state = {
     feeds: [],
@@ -18,6 +18,7 @@ const app = () => {
       isValid: null,
       status: '',
       errorCode: '',
+      isFormBlocked: false,
     },
   };
 
@@ -27,6 +28,11 @@ const app = () => {
         validateUrl(watchedState).then((result) => {
           watchedState.form.errorCode = result;
         });
+        break;
+      }
+      case 'form.isFormBlocked': {
+        const { isFormBlocked } = watchedState.form;
+        changeFormStatus(form, isFormBlocked);
         break;
       }
       case 'form.errorCode': {
@@ -47,11 +53,13 @@ const app = () => {
         break;
       }
       case 'feeds': {
+        watchedState.form.isFormBlocked = true;
         getFeedsFromSource(watchedState).then(([feed, items]) => {
           const { url } = feed;
           const feedIndex = _.findIndex(watchedState.feeds, { url });
           if (url) onChange.target(watchedState).feeds[feedIndex] = feed;
           watchedState.items = [...watchedState.items, ...items];
+          watchedState.form.isFormBlocked = false;
         });
         break;
       }
@@ -62,9 +70,6 @@ const app = () => {
       }
       case 'message': {
         renderStatus(state);
-        break;
-      }
-      case 'feeds.0.pubDate': {
         break;
       }
       default: {
