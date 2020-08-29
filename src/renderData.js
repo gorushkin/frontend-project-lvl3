@@ -1,8 +1,6 @@
 export const renderStatus = (watchedState, elements) => {
-  console.log('renderStatus');
   const { message, isValid } = watchedState.form;
   const { feedback, input } = elements;
-  console.log(isValid);
   if (isValid) {
     input.classList.remove('is-invalid');
     feedback.classList.remove('text-danger');

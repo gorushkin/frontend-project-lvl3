@@ -1,4 +1,6 @@
 import _ from 'lodash';
+import getData from './getData';
+import parseData from './parseData';
 
 const getlastUpdateDate = (items, lastFeedUpdateDate) => {
   if (items.length === 0) return lastFeedUpdateDate;
@@ -11,9 +13,22 @@ const getlastUpdateDate = (items, lastFeedUpdateDate) => {
   return newFeedUpdateDate;
 };
 
-const updateFeed = (watchedState) => {
-  const { feeds } = watchedState;
-  console.log(feeds);
+const updateFeed = (feeds) => {
+  const updatedFeedsAndItems = feeds.map((feed) => {
+    const { url, pubDate: lastFeedUpdateDate, id } = feed;
+    const result = getData(url).then((data) => {
+      const { items } = parseData(data);
+      const onlyNewItems = items
+        .filter((item) => item.pubDate > lastFeedUpdateDate)
+        .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+      const newFeedUpdateDate = getlastUpdateDate(onlyNewItems, lastFeedUpdateDate);
+      // return [newFeedUpdateDate, onlyNewItems];
+      return newFeedUpdateDate;
+    });
+    console.log(result);
+    // return [{ ...feed, pubDate: date }, newItems];
+  });
+  return updatedFeedsAndItems;
 };
 
 export default updateFeed;

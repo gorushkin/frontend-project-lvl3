@@ -46,7 +46,7 @@ const app = () => {
       case 'form.error': {
         const { error } = watchedState.form;
         watchedState.form.isValid = !error;
-        if (error) watchedState.form.message = error;
+        if (error) watchedState.form.message = i18next.t(error);
         break;
       }
       case 'form.message': {
@@ -67,7 +67,7 @@ const app = () => {
         getData(url).then((data) => {
           watchedState.form.data = data;
           watchedState.form.isFormBlocked = false;
-          watchedState.form.message = 'loaded';
+          watchedState.form.message = i18next.t('loaded');
           elements.form.reset();
           onChange.target(watchedState).form.value = '';
           onChange.target(watchedState).form.isValid = true;
@@ -87,7 +87,11 @@ const app = () => {
       case 'items': {
         const { items, feeds } = watchedState;
         renderFeeds(feeds, items);
-        updateFeeds(feeds);
+        setTimeout(() => {
+          updateFeeds(feeds).then((result) => {
+            console.log(result);
+          });
+        }, 30000);
         break;
       }
       default: {
