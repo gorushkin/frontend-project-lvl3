@@ -1,5 +1,15 @@
-export const renderStatus = ({ message }) => {
-  const feedback = document.querySelector('.feedback');
+export const renderStatus = (watchedState, elements) => {
+  console.log('renderStatus');
+  const { message, isValid } = watchedState.form;
+  const { feedback, input } = elements;
+  console.log(isValid);
+  if (isValid) {
+    input.classList.remove('is-invalid');
+    feedback.classList.remove('text-danger');
+  } else {
+    input.classList.add('is-invalid');
+    feedback.classList.add('text-danger');
+  }
   feedback.innerHTML = message;
 };
 

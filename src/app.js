@@ -1,23 +1,30 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 import _ from 'lodash';
-import getFeedsFromSource from './getItemssFromSource';
+import getData from './getData';
 import validateUrl from './validateUrl';
 import { renderFeeds, renderStatus } from './renderData';
 import changeFormStatus from './changeFormStatus';
 import { en } from './locales';
+import getItems from './getItems';
 
 const app = () => {
-  const form = document.querySelector('.rss-form');
+  const elements = {
+    form: document.querySelector('.rss-form'),
+    feedback: document.querySelector('.feedback'),
+    input: document.querySelector('input'),
+    button: document.querySelector('button'),
+  };
 
   const state = {
     feeds: [],
     items: [],
     form: {
+      data: null,
       value: '',
       isValid: null,
-      status: '',
-      errorCode: '',
+      error: '',
+      message: '',
       isFormBlocked: false,
     },
   };
@@ -26,50 +33,57 @@ const app = () => {
     switch (path) {
       case 'form.value': {
         validateUrl(watchedState).then((result) => {
-          watchedState.form.errorCode = result;
+          watchedState.form.error = result;
         });
         break;
       }
       case 'form.isFormBlocked': {
         const { isFormBlocked } = watchedState.form;
-        changeFormStatus(form, isFormBlocked);
+        changeFormStatus(elements, isFormBlocked);
         break;
       }
-      case 'form.errorCode': {
-        if (watchedState.form.errorCode === null) {
-          watchedState.form.isValid = true;
-        } else {
-          watchedState.form.isValid = false;
-        }
-        onChange.target(watchedState).form.isValid = null;
-        onChange.target(watchedState).form.errorCode = '';
+      case 'form.error': {
+        const { error } = watchedState.form;
+        watchedState.form.isValid = !error;
+        if (error) watchedState.form.message = error;
+        break;
+      }
+      case 'form.message': {
+        renderStatus(watchedState, elements);
         break;
       }
       case 'form.isValid': {
         if (watchedState.form.isValid) {
           const { value } = watchedState.form;
-          watchedState.feeds.push({ url: value });
+          const { feeds } = watchedState;
+          watchedState.feeds = [{ url: value }, ...feeds];
         }
         break;
       }
       case 'feeds': {
         watchedState.form.isFormBlocked = true;
-        getFeedsFromSource(watchedState).then(([feed, items]) => {
-          const { url } = feed;
+        const { value: url } = watchedState.form;
+        getData(url).then((data) => {
+          watchedState.form.data = data;
+          watchedState.form.isFormBlocked = false;
+          watchedState.form.message = 'loaded';
+          onChange.target(watchedState).form.isValid = true;
+        });
+        break;
+      }
+      case 'form.data': {
+        const { data, value: url } = watchedState.form;
+        if (data) {
+          const [feed, items] = getItems(data, url);
           const feedIndex = _.findIndex(watchedState.feeds, { url });
           if (url) onChange.target(watchedState).feeds[feedIndex] = feed;
           watchedState.items = [...watchedState.items, ...items];
-          watchedState.form.isFormBlocked = false;
-        });
+        }
         break;
       }
       case 'items': {
         const { items, feeds } = watchedState;
         renderFeeds(feeds, items);
-        break;
-      }
-      case 'message': {
-        renderStatus(state);
         break;
       }
       default: {
@@ -78,7 +92,7 @@ const app = () => {
     }
   });
 
-  form.addEventListener('submit', (e) => {
+  elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     watchedState.form.value = formData.get('url');

@@ -1,6 +1,5 @@
-export default (form, isFormBlocked) => {
-  const input = form.querySelector('input');
-  const button = form.querySelector('button');
+export default (elements, isFormBlocked) => {
+  const { input, button } = elements;
   input.disabled = isFormBlocked;
   button.disabled = isFormBlocked;
 };

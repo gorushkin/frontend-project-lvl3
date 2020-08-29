@@ -6,12 +6,11 @@ const checkIfUrlExistInFeedsList = (feeds, url) => _.findIndex(feeds, { url }) !
 export default (watchedState) => {
   const { feeds, form } = watchedState;
   const { value: url } = form;
-  console.log('url: ', url);
   const schema = yup.string().url();
   const isUrlExistInFeedsList = checkIfUrlExistInFeedsList(feeds, url);
   return schema.isValid(url).then((result) => {
-    if (isUrlExistInFeedsList) return 2;
+    if (isUrlExistInFeedsList) return 'exist';
     if (result) return null;
-    return 4;
+    return 'invalid';
   });
 };
