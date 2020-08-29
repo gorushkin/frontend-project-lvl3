@@ -3,7 +3,7 @@ import i18next from 'i18next';
 import _ from 'lodash';
 import getFeedsFromSource from './getItemssFromSource';
 import validateUrl from './validateUrl';
-import { renderFeed, renderStatus } from './renderFeed';
+import { renderFeeds, renderStatus } from './renderData';
 import { en } from './locales';
 
 const app = () => {
@@ -22,7 +22,6 @@ const app = () => {
   };
 
   const watchedState = onChange(state, (path) => {
-    // console.log(path);
     switch (path) {
       case 'form.value': {
         validateUrl(watchedState).then((result) => {
@@ -57,8 +56,8 @@ const app = () => {
         break;
       }
       case 'items': {
-        // renderFeed(state);
-        console.log(watchedState.items);
+        const { items, feeds } = watchedState;
+        renderFeeds(feeds, items);
         break;
       }
       case 'message': {

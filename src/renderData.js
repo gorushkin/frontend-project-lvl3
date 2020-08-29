@@ -3,7 +3,7 @@ export const renderStatus = ({ message }) => {
   feedback.innerHTML = message;
 };
 
-export const renderFeed = ({ feeds, items }) => {
+export const renderFeeds = (feeds, items) => {
   const container = document.querySelector('.feeds');
   container.innerHTML = '';
   feeds.forEach(({ title, id }) => {
