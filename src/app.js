@@ -7,6 +7,7 @@ import { renderFeeds, renderStatus } from './renderData';
 import changeFormStatus from './changeFormStatus';
 import { en } from './locales';
 import getItems from './getItems';
+import updateFeeds from './updateFeeds';
 
 const app = () => {
   const elements = {
@@ -67,6 +68,8 @@ const app = () => {
           watchedState.form.data = data;
           watchedState.form.isFormBlocked = false;
           watchedState.form.message = 'loaded';
+          elements.form.reset();
+          onChange.target(watchedState).form.value = '';
           onChange.target(watchedState).form.isValid = true;
         });
         break;
@@ -84,6 +87,7 @@ const app = () => {
       case 'items': {
         const { items, feeds } = watchedState;
         renderFeeds(feeds, items);
+        updateFeeds(feeds);
         break;
       }
       default: {
