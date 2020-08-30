@@ -7,7 +7,7 @@ import { renderFeeds, renderStatus } from './renderData';
 import changeFormStatus from './changeFormStatus';
 import { en } from './locales';
 import getItems from './getItems';
-import updateFeeds from './updateFeeds';
+// import updateFeeds from './updateFeeds';
 
 const app = () => {
   const elements = {
@@ -20,6 +20,7 @@ const app = () => {
   const state = {
     feeds: [],
     items: [],
+    update: false,
     form: {
       data: null,
       value: '',
@@ -76,31 +77,43 @@ const app = () => {
         break;
       }
       case 'form.data': {
-        const { data, value: url } = watchedState.form;
+        const { data } = watchedState.form;
         if (data) {
-          const [feed, items] = getItems(data, url);
-          const feedIndex = _.findIndex(watchedState.feeds, { url });
-          if (url) onChange.target(watchedState).feeds[feedIndex] = feed;
-          watchedState.items = [...watchedState.items, ...items];
+          const [feed, items] = getItems(watchedState);
+          onChange.target(watchedState).feeds[feed.index] = feed;
+          watchedState.items = [...items, ...watchedState.items];
+          watchedState.update = true;
         }
         break;
       }
       case 'items': {
         const { items, feeds } = watchedState;
+        console.log(watchedState);
         renderFeeds(feeds, items);
-        setTimeout(() => {
-          console.log('updaaaaating');
-          const result = updateFeeds(feeds);
-          result.forEach((element) => {
-            element.then((object) => {
-              const { onlyNewItems, newFeedUpdateDate } = object;
-              // console.log('newFeedUpdateDate: ', newFeedUpdateDate);
-              // console.log('onlyNewItems: ', onlyNewItems);
-              watchedState.items = [...onlyNewItems, ...state.items];
-              onChange.target(watchedState).form.isValid = true;
+        // watchedState.update = true;
+        // setTimeout(() => {
+        //   console.log('updating');
+        //   watchedState.feeds.forEach((feed) => {
+        //     onChange.target(watchedState).form.value = feed.url;
+        //     getData(feed.url).then((data) => {
+        //       watchedState.form.data = data;
+        //     });
+        //   });
+        // }, 5000);
+        break;
+      }
+      case 'update': {
+        if (watchedState.update) {
+          setTimeout(() => {
+            console.log('updating');
+            watchedState.feeds.forEach((feed) => {
+              onChange.target(watchedState).form.value = feed.url;
+              getData(feed.url).then((data) => {
+                watchedState.form.data = data;
+              });
             });
-          });
-        }, 5000);
+          }, 5000);
+        }
         break;
       }
       default: {
