@@ -14,21 +14,20 @@ const getlastUpdateDate = (items, lastFeedUpdateDate) => {
 };
 
 const updateFeed = (feeds) => {
-  const updatedFeedsAndItems = feeds.map((feed) => {
+  const updatedInfo = feeds.map((feed) => {
+    console.table(feed);
     const { url, pubDate: lastFeedUpdateDate, id } = feed;
-    const result = getData(url).then((data) => {
+    const updatedFeedInfoAndFeedItems = getData(url).then((data) => {
       const { items } = parseData(data);
       const onlyNewItems = items
         .filter((item) => item.pubDate > lastFeedUpdateDate)
         .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
       const newFeedUpdateDate = getlastUpdateDate(onlyNewItems, lastFeedUpdateDate);
-      // return [newFeedUpdateDate, onlyNewItems];
-      return newFeedUpdateDate;
+      return { onlyNewItems, newFeedUpdateDate };
     });
-    console.log(result);
-    // return [{ ...feed, pubDate: date }, newItems];
+    return updatedFeedInfoAndFeedItems;
   });
-  return updatedFeedsAndItems;
+  return updatedInfo;
 };
 
 export default updateFeed;

@@ -8,6 +8,7 @@ export default (feedUrl) => {
     .then((response) => response.data)
     .catch((err) => {
       console.log(err.code);
+      console.log(err.message);
       return null;
     });
   return data;

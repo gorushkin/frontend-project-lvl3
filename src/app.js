@@ -66,11 +66,12 @@ const app = () => {
         const { value: url } = watchedState.form;
         getData(url).then((data) => {
           watchedState.form.data = data;
-          watchedState.form.isFormBlocked = false;
           watchedState.form.message = i18next.t('loaded');
           elements.form.reset();
           onChange.target(watchedState).form.value = '';
-          onChange.target(watchedState).form.isValid = true;
+          onChange.target(watchedState).form.isValid = undefined;
+          onChange.target(watchedState).form.error = undefined;
+          watchedState.form.isFormBlocked = false;
         });
         break;
       }
@@ -88,10 +89,18 @@ const app = () => {
         const { items, feeds } = watchedState;
         renderFeeds(feeds, items);
         setTimeout(() => {
-          updateFeeds(feeds).then((result) => {
-            console.log(result);
+          console.log('updaaaaating');
+          const result = updateFeeds(feeds);
+          result.forEach((element) => {
+            element.then((object) => {
+              const { onlyNewItems, newFeedUpdateDate } = object;
+              // console.log('newFeedUpdateDate: ', newFeedUpdateDate);
+              // console.log('onlyNewItems: ', onlyNewItems);
+              watchedState.items = [...onlyNewItems, ...state.items];
+              onChange.target(watchedState).form.isValid = true;
+            });
           });
-        }, 30000);
+        }, 5000);
         break;
       }
       default: {
