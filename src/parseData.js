@@ -6,19 +6,18 @@ export default (data) => {
   const feedPubDate = parsedData.querySelector('pubDate').textContent;
   const feed = { title: feedTitle, link: feedLink, pubDate: feedPubDate };
   const itemList = parsedData.querySelectorAll('item');
-  const items = [];
-  itemList.forEach((feedItem) => {
-    const title = feedItem.querySelector('title').textContent;
-    const link = feedItem.querySelector('link').textContent;
-    const description = feedItem.querySelector('description').textContent;
-    const pubDate = feedItem.querySelector('pubDate').textContent;
-    const item = {
-      title,
-      link,
-      description,
-      pubDate,
-    };
-    items.push(item);
-  });
+  const items = Array.prototype.slice.call(itemList)
+    .map((feedItem) => {
+      const title = feedItem.querySelector('title').textContent;
+      const link = feedItem.querySelector('link').textContent;
+      const description = feedItem.querySelector('description').textContent;
+      const pubDate = feedItem.querySelector('pubDate').textContent;
+      return {
+        title,
+        link,
+        description,
+        pubDate,
+      };
+    });
   return { feed, items };
 };
