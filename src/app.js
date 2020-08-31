@@ -7,7 +7,6 @@ import { renderFeeds, renderStatus } from './renderData';
 import changeFormStatus from './changeFormStatus';
 import { en } from './locales';
 import getItems from './getItems';
-import updateFeeds from './updateFeeds';
 
 const app = () => {
   const elements = {
@@ -22,7 +21,6 @@ const app = () => {
     items: [],
     updateStatus: false,
     form: {
-      data: null,
       value: '',
       isValid: null,
       error: '',
@@ -32,7 +30,6 @@ const app = () => {
   };
 
   const watchedState = onChange(state, (path) => {
-    // console.log(path);
     switch (path) {
       case 'form.value': {
         validateUrl(watchedState).then((result) => {
@@ -74,40 +71,34 @@ const app = () => {
           onChange.target(watchedState).form.error = undefined;
           watchedState.form.isFormBlocked = false;
           const [feed, items] = getItems(watchedState.feeds, data, url);
-          onChange.target(watchedState).feeds[feed.index] = feed;
+          const feedIndex = _.findIndex(watchedState.feeds, { url });
+          onChange.target(watchedState).feeds[feedIndex] = feed;
           watchedState.items = [...items, ...watchedState.items];
         });
         break;
       }
-      // case 'form.data': {
-      //   console.log('form.data');
-      //   const { data } = watchedState.form;
-      //   if (data) {
-      //     const [feed, items] = getItems(watchedState);
-      //     onChange.target(watchedState).feeds[feed.index] = feed;
-      //     watchedState.items = [...items, ...watchedState.items];
-      //   }
-      //   break;
-      // }
       case 'items': {
         const { items, feeds } = watchedState;
-        onChange.target(watchedState).form.data = null;
         renderFeeds(feeds, items);
+        watchedState.updateStatus = true;
         break;
       }
       case 'updateStatus': {
-        // updateFeeds(watchedState);
-        // if (watchedState.updateStatus) {
-        //   setTimeout(() => {
-        //     console.log('update');
-        //     watchedState.feeds.forEach((feed) => {
-        //       onChange.target(watchedState).form.value = feed.url;
-        //       getData(feed.url).then((data) => {
-        //         watchedState.form.data = data;
-        //       });
-        //     });
-        //   }, 5000);
-        // }
+        const { feeds } = watchedState;
+        if (watchedState.updateStatus) {
+          setTimeout(() => {
+            feeds.forEach((feed) => {
+              const { url } = feed;
+              getData(url).then((data) => {
+                const [updatedFeed, items] = getItems(feeds, data, url);
+                const feedIndex = _.findIndex(watchedState.feeds, { url });
+                onChange.target(watchedState).feeds[feedIndex] = updatedFeed;
+                watchedState.items = [...items, ...watchedState.items];
+              });
+            });
+            watchedState.updateStatus = false;
+          }, 5000);
+        }
         break;
       }
       default: {

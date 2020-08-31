@@ -11,7 +11,5 @@ export default (feedUrl) => {
       console.log(err.message);
       return null;
     });
-  // const data = axios.get(getUrl(feedUrl), { timeout: 50000 }).then((response) => response.data);
-  console.log('getdata');
   return data;
 };

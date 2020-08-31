@@ -14,16 +14,14 @@ export const renderStatus = (watchedState, elements) => {
 export const renderFeeds = (feeds, items) => {
   const container = document.querySelector('.feeds');
   container.innerHTML = '';
+  const fragment = [];
   feeds.forEach(({ title, id }) => {
-    const feedTitle = document.createElement('h2');
-    feedTitle.textContent = title;
-    container.appendChild(feedTitle);
-    items
+    const feedTitle = `<h2>${title}</h2>`;
+    const nodes = items
       .filter((item) => item.feedId === id)
-      .forEach((element) => {
-        const node = document.createElement('div');
-        node.innerHTML = `<a href="${element.link}">${element.title}</a>`;
-        container.appendChild(node);
-      });
+      .map((element) => `<div><a href="${element.link}">${element.title}</a></div>`);
+    fragment.push(feedTitle);
+    fragment.push(nodes.join(''));
   });
+  container.innerHTML = fragment.join('');
 };
