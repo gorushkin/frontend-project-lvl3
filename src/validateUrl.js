@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import _ from 'lodash';
 
 export default (url, feeds) => {
   const urlList = feeds.map((feed) => feed.url);

@@ -22,6 +22,7 @@ const app = () => {
       const elements = {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
+        feeds: document.querySelector('.feeds'),
         input: document.querySelector('input'),
         button: document.querySelector('button'),
       };
@@ -90,7 +91,7 @@ const app = () => {
             break;
           }
           case 'posts': {
-            renderFeeds(watchedState.feeds, watchedState.posts);
+            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
             break;
           }
           default: {
