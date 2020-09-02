@@ -16,9 +16,9 @@ const app = () => {
   i18next
     .init({
       lng: 'en',
-      debug: true,
       resources,
-    }).then(() => {
+    })
+    .then(() => {
       const elements = {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
@@ -31,6 +31,7 @@ const app = () => {
         feeds: [],
         posts: [],
         status: 'filling',
+        error: null,
       };
 
       const updateFeedInfo = (feed, posts, watchedState, url) => {
@@ -41,24 +42,22 @@ const app = () => {
 
       const updateFeeds = (watchedState) => {
         const { feeds } = watchedState;
-        setTimeout(() => {
-          if (feeds.length > 0 && watchedState.status !== 'loading') {
-            feeds.forEach((feed) => {
-              const { url } = feed;
-              getData(url)
-                .then((data) => {
-                  const [updatedFeed, posts] = getItems(feeds, data, url);
-                  updateFeedInfo(updatedFeed, posts, watchedState, url);
-                  updateFeeds(watchedState);
-                })
-                .catch(() => {
-                  updateFeeds(watchedState);
-                });
+        if (feeds.length > 0 && watchedState.status !== 'loading') {
+          const promises = feeds.map(({ url }) => getData(url).then((data) => ({ data, url })));
+          Promise.all(promises)
+            .then((response) => {
+              response.forEach(({ data, url }) => {
+                const [updatedFeed, posts] = getItems(feeds, data, url);
+                updateFeedInfo(updatedFeed, posts, watchedState, url);
+              });
+            }).catch(() => {
+            })
+            .finally(() => {
+              setTimeout(() => updateFeeds(watchedState), 5000);
             });
-          } else {
-            updateFeeds(watchedState);
-          }
-        }, 5000);
+        } else {
+          setTimeout(() => updateFeeds(watchedState), 5000);
+        }
       };
 
       const watchedState = onChange(state, (path, value) => {
@@ -108,6 +107,7 @@ const app = () => {
             getData(url)
               .then((data) => {
                 watchedState.status = 'loaded';
+                // watchedState.error =
                 renderMessage(
                   i18next.t('loaded'),
                   watchedState.status,
@@ -125,10 +125,12 @@ const app = () => {
               });
           } else {
             watchedState.status = 'error';
-            renderMessage(i18next.t(result),
+            renderMessage(
+              i18next.t(result),
               watchedState.status,
               elements.feedback,
-              elements.input);
+              elements.input,
+            );
           }
         });
       };
