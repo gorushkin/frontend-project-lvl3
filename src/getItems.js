@@ -15,13 +15,14 @@ export default (feeds, data, url) => {
     ...feed,
     id,
   };
+
   if (!currentPreviousPubDate) {
     updatedCurrentFeed.previousPubDate = feed.pubDate;
     return [updatedCurrentFeed, postsWithId];
   }
 
   const onlyNewposts = postsWithId.filter(
-    (item) => new Date(item.pubDate) > new Date(currentPreviousPubDate)
+    (item) => new Date(item.pubDate) > new Date(currentPreviousPubDate),
   );
 
   updatedCurrentFeed.previousPubDate = currenFeedUpdateTime;
