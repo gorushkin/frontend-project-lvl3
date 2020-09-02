@@ -4,7 +4,6 @@ export default {
     translation: {
       loaded: 'Rss has been loaded',
       exist: 'Rss already exists',
-      added: 'Rss added',
       invalid: 'Rss is invalid',
     },
   },

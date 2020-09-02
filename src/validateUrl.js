@@ -3,7 +3,7 @@ import _ from 'lodash';
 
 export default (url, feeds) => {
   const urlList = feeds.map((feed) => feed.url);
-  const schema = yup.string().url('is not valid').notOneOf(urlList, 'exist');
+  const schema = yup.string().url('invalid').notOneOf(urlList, 'exist');
   return schema
     .validate(url)
     .then((result) => result)
