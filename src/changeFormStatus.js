@@ -1,7 +1,11 @@
 /* eslint no-param-reassign: "error" */
 
-export default (input, button, status) => {
-  const isFormBlocked = status === 'loading';
-  input.disabled = isFormBlocked;
-  button.disabled = isFormBlocked;
+export const block = (input, button) => {
+  input.disabled = true;
+  button.disabled = true;
+};
+
+export const unblock = (input, button) => {
+  input.disabled = false;
+  button.disabled = false;
 };

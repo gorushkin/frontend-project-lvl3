@@ -6,7 +6,7 @@ import _ from 'lodash';
 import validateUrl from './validateUrl';
 import renderFeedback from './renderFeedback';
 import renderFeeds from './renderFeeds';
-import changeFormStatus from './changeFormStatus';
+import * as changeFormStatus from './changeFormStatus';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -31,7 +31,7 @@ const app = () => {
         feeds: [],
         posts: [],
         status: 'waiting',
-        feedback: null,
+        feedback: '',
       };
 
       const updateFeedInfo = (feed, posts, watchedState, url) => {
@@ -66,11 +66,11 @@ const app = () => {
             switch (value) {
               case 'waiting': {
                 elements.form.reset();
-                changeFormStatus(elements.input, elements.button, watchedState.status);
+                changeFormStatus.unblock(elements.input, elements.button);
                 break;
               }
               case 'loading': {
-                changeFormStatus(elements.input, elements.button, watchedState.status);
+                changeFormStatus.block(elements.input, elements.button);
                 break;
               }
               case 'error': {
@@ -81,7 +81,7 @@ const app = () => {
                 break;
               }
               case 'loaded': {
-                changeFormStatus(elements.input, elements.button, watchedState.status);
+                changeFormStatus.unblock(elements.input, elements.button);
                 renderFeedback(
                   i18next.t(watchedState.feedback),
                   watchedState.status,
