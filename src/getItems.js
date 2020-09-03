@@ -18,5 +18,5 @@ export default (watchedState, data, url) => {
   };
 
   const newPosts = _.differenceWith(postsWithId, oldPosts, comparator);
-  return [updatedCurrentFeed, newPosts];
+  return { updatedCurrentFeed, newPosts };
 };
