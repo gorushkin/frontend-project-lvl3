@@ -47,7 +47,7 @@ const app = () => {
           Promise.all(promises)
             .then((response) => {
               response.forEach(({ data, url }) => {
-                const [updatedFeed, posts] = getItems(feeds, data, url);
+                const [updatedFeed, posts] = getItems(watchedState, data, url);
                 updateFeedInfo(updatedFeed, posts, watchedState, url);
               });
             })
@@ -116,7 +116,7 @@ const app = () => {
                 state.message = 'loaded';
                 watchedState.status = 'loaded';
                 watchedState.status = 'filling';
-                const [feed, posts] = getItems(watchedState.feeds, data, url);
+                const [feed, posts] = getItems(watchedState, data, url);
                 updateFeedInfo(feed, posts, watchedState, url);
               })
               .catch((err) => {
