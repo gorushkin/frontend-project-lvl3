@@ -1,29 +1,22 @@
 import _ from 'lodash';
 import parseData from './parseData';
 
-export default (feeds, data, url) => {
-  const { feed, items } = parseData(data);
-  const currenFeedUpdateTime = feed.pubDate;
+const comparator = (newPost, oldPost) => newPost.guid === oldPost.guid;
+
+export default (watchedState, data, url) => {
+  const { feeds, posts: oldPosts } = watchedState;
+  const { feed, posts } = parseData(data);
   const feedIndex = _.findIndex(feeds, { url });
   const currentFeed = { ...feeds[feedIndex] };
   const id = currentFeed.id ? currentFeed.id : _.uniqueId();
-  const currentPreviousPubDate = currentFeed.previousPubDate;
-  const itemsWithId = items.map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+  const postsWithId = posts.map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
 
   const updatedCurrentFeed = {
     ...currentFeed,
     ...feed,
     id,
   };
-  if (!currentPreviousPubDate) {
-    updatedCurrentFeed.previousPubDate = feed.pubDate;
-    return [updatedCurrentFeed, itemsWithId];
-  }
 
-  const onlyNewItems = itemsWithId.filter(
-    (item) => new Date(item.pubDate) > new Date(currentPreviousPubDate),
-  );
-
-  updatedCurrentFeed.previousPubDate = currenFeedUpdateTime;
-  return [updatedCurrentFeed, onlyNewItems];
+  const newPosts = _.differenceWith(postsWithId, oldPosts, comparator);
+  return { updatedCurrentFeed, newPosts };
 };

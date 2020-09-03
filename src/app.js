@@ -1,128 +1,148 @@
+/* eslint no-param-reassign: "error" */
+
 import onChange from 'on-change';
 import i18next from 'i18next';
 import _ from 'lodash';
-import getData from './getData';
 import validateUrl from './validateUrl';
-import { renderFeeds, renderStatus } from './renderData';
-import changeFormStatus from './changeFormStatus';
-import { en } from './locales';
+import renderFeedback from './renderFeedback';
+import renderFeeds from './renderFeeds';
+import * as changeFormStatus from './changeFormStatus';
 import getItems from './getItems';
+import { en } from './locales';
+import getData from './getData';
 
 const app = () => {
-  const elements = {
-    form: document.querySelector('.rss-form'),
-    feedback: document.querySelector('.feedback'),
-    input: document.querySelector('input'),
-    button: document.querySelector('button'),
-  };
-
-  const state = {
-    feeds: [],
-    items: [],
-    updateStatus: false,
-    form: {
-      value: '',
-      isValid: null,
-      error: '',
-      message: '',
-      isFormBlocked: false,
-    },
-  };
-
-  const watchedState = onChange(state, (path) => {
-    switch (path) {
-      case 'form.value': {
-        validateUrl(watchedState).then((result) => {
-          watchedState.form.error = result;
-        });
-        break;
-      }
-      case 'form.isFormBlocked': {
-        const { isFormBlocked } = watchedState.form;
-        changeFormStatus(elements, isFormBlocked);
-        break;
-      }
-      case 'form.error': {
-        const { error } = watchedState.form;
-        watchedState.form.isValid = !error;
-        if (error) watchedState.form.message = i18next.t(error);
-        break;
-      }
-      case 'form.message': {
-        renderStatus(watchedState, elements);
-        break;
-      }
-      case 'form.isValid': {
-        if (watchedState.form.isValid) {
-          const { value } = watchedState.form;
-          const { feeds } = watchedState;
-          watchedState.feeds = [{ url: value }, ...feeds];
-        }
-        break;
-      }
-      case 'feeds': {
-        watchedState.form.isFormBlocked = true;
-        const { value: url } = watchedState.form;
-        getData(url).then((data) => {
-          watchedState.form.message = i18next.t('loaded');
-          elements.form.reset();
-          onChange.target(watchedState).form.value = '';
-          onChange.target(watchedState).form.isValid = undefined;
-          onChange.target(watchedState).form.error = undefined;
-          watchedState.form.isFormBlocked = false;
-          const [feed, items] = getItems(watchedState.feeds, data, url);
-          const feedIndex = _.findIndex(watchedState.feeds, { url });
-          onChange.target(watchedState).feeds[feedIndex] = feed;
-          watchedState.items = [...items, ...watchedState.items];
-        });
-        break;
-      }
-      case 'items': {
-        const { items, feeds } = watchedState;
-        renderFeeds(feeds, items);
-        watchedState.updateStatus = true;
-        break;
-      }
-      case 'updateStatus': {
-        const { feeds } = watchedState;
-        if (watchedState.updateStatus) {
-          setTimeout(() => {
-            feeds.forEach((feed) => {
-              const { url } = feed;
-              getData(url).then((data) => {
-                const [updatedFeed, items] = getItems(feeds, data, url);
-                const feedIndex = _.findIndex(watchedState.feeds, { url });
-                onChange.target(watchedState).feeds[feedIndex] = updatedFeed;
-                watchedState.items = [...items, ...watchedState.items];
-              });
-            });
-            watchedState.updateStatus = false;
-          }, 5000);
-        }
-        break;
-      }
-      default: {
-        throw new Error(`Unknown order state: '${path}'!`);
-      }
-    }
-  });
-
-  elements.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    watchedState.form.value = formData.get('url');
-  });
-};
-
-const initLanguagePack = () => {
   const resources = en;
   i18next
     .init({
       lng: 'en',
-      debug: true,
       resources,
     })
-    .then(() => app());
+    .then(() => {
+      const elements = {
+        form: document.querySelector('.rss-form'),
+        feedback: document.querySelector('.feedback'),
+        feeds: document.querySelector('.feeds'),
+        input: document.querySelector('input'),
+        button: document.querySelector('button'),
+      };
+
+      const state = {
+        feeds: [],
+        posts: [],
+        status: 'waiting',
+        feedback: '',
+      };
+
+      const updateFeedInfo = (feed, posts, watchedState, url) => {
+        const feedIndex = _.findIndex(watchedState.feeds, { url });
+        onChange.target(watchedState).feeds[feedIndex] = feed;
+        watchedState.posts = [...posts, ...watchedState.posts];
+      };
+
+      const updateFeeds = (watchedState) => {
+        const { feeds } = watchedState;
+        if (feeds.length > 0 && watchedState.status !== 'loading') {
+          const promises = feeds.map(({ url }) => getData(url).then((data) => ({ data, url })));
+          Promise.all(promises)
+            .then((response) => {
+              response.forEach(({ data, url }) => {
+                const { newPosts } = getItems(watchedState, data, url);
+                watchedState.posts = [...newPosts, ...watchedState.posts];
+              });
+            })
+            .catch(() => {})
+            .finally(() => {
+              setTimeout(() => updateFeeds(watchedState), 5000);
+            });
+        } else {
+          setTimeout(() => updateFeeds(watchedState), 5000);
+        }
+      };
+
+      const watchedState = onChange(state, (path, value) => {
+        switch (path) {
+          case 'status': {
+            switch (value) {
+              case 'waiting': {
+                elements.form.reset();
+                changeFormStatus.unblock(elements.input, elements.button);
+                break;
+              }
+              case 'loading': {
+                changeFormStatus.block(elements.input, elements.button);
+                break;
+              }
+              case 'error': {
+                renderFeedback(i18next.t(watchedState.feedback),
+                  watchedState.status,
+                  elements.feedback,
+                  elements.input);
+                break;
+              }
+              case 'loaded': {
+                changeFormStatus.unblock(elements.input, elements.button);
+                renderFeedback(
+                  i18next.t(watchedState.feedback),
+                  watchedState.status,
+                  elements.feedback,
+                  elements.input,
+                );
+                break;
+              }
+              default: {
+                console.log(`Unknown order state: '${value}'!`);
+              }
+            }
+            break;
+          }
+          case 'posts': {
+            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
+            break;
+          }
+          default: {
+            console.log(`Unknown order state: '${path}'!`);
+          }
+        }
+      });
+
+      const formHandler = (url) => {
+        validateUrl(url, state.feeds).then((result) => {
+          if (url === result) {
+            state.feeds = [{ url }, ...watchedState.feeds];
+            watchedState.status = 'loading';
+            getData(url)
+              .then((data) => {
+                state.feedback = 'loaded';
+                watchedState.status = 'loaded';
+                watchedState.status = 'waiting';
+                const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
+                  watchedState,
+                  data,
+                  url,
+                );
+                updateFeedInfo(feed, posts, watchedState, url);
+              })
+              .catch((err) => {
+                state.feedback = err.message;
+                watchedState.status = 'error';
+                watchedState.status = 'waiting';
+              });
+          } else {
+            state.feedback = result;
+            watchedState.status = 'error';
+          }
+        });
+      };
+
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const url = formData.get('url');
+        formHandler(url);
+        updateFeeds(watchedState);
+      });
+    });
 };
 
-export default initLanguagePack;
+export default app;
