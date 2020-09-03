@@ -4,7 +4,7 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import _ from 'lodash';
 import validateUrl from './validateUrl';
-import renderMessage from './renderFeedback';
+import renderFeedback from './renderFeedback';
 import renderFeeds from './renderFeeds';
 import changeFormStatus from './changeFormStatus';
 import getItems from './getItems';
@@ -30,8 +30,8 @@ const app = () => {
       const state = {
         feeds: [],
         posts: [],
-        status: 'filling',
-        message: null,
+        status: 'waiting',
+        feedback: null,
       };
 
       const updateFeedInfo = (feed, posts, watchedState, url) => {
@@ -64,7 +64,7 @@ const app = () => {
         switch (path) {
           case 'status': {
             switch (value) {
-              case 'filling': {
+              case 'waiting': {
                 elements.form.reset();
                 changeFormStatus(elements.input, elements.button, watchedState.status);
                 break;
@@ -74,7 +74,7 @@ const app = () => {
                 break;
               }
               case 'error': {
-                renderMessage(i18next.t(watchedState.message),
+                renderFeedback(i18next.t(watchedState.feedback),
                   watchedState.status,
                   elements.feedback,
                   elements.input);
@@ -82,8 +82,8 @@ const app = () => {
               }
               case 'loaded': {
                 changeFormStatus(elements.input, elements.button, watchedState.status);
-                renderMessage(
-                  i18next.t(watchedState.message),
+                renderFeedback(
+                  i18next.t(watchedState.feedback),
                   watchedState.status,
                   elements.feedback,
                   elements.input,
@@ -113,19 +113,19 @@ const app = () => {
             watchedState.status = 'loading';
             getData(url)
               .then((data) => {
-                state.message = 'loaded';
+                state.feedback = 'loaded';
                 watchedState.status = 'loaded';
-                watchedState.status = 'filling';
+                watchedState.status = 'waiting';
                 const [feed, posts] = getItems(watchedState, data, url);
                 updateFeedInfo(feed, posts, watchedState, url);
               })
               .catch((err) => {
-                state.message = err.message;
+                state.feedback = err.message;
                 watchedState.status = 'error';
-                watchedState.status = 'filling';
+                watchedState.status = 'waiting';
               });
           } else {
-            state.message = result;
+            state.feedback = result;
             watchedState.status = 'error';
           }
         });
