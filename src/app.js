@@ -4,7 +4,7 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import _ from 'lodash';
 import validateUrl from './validateUrl';
-import renderMessage from './renderMessage';
+import renderMessage from './renderFeedback';
 import renderFeeds from './renderFeeds';
 import changeFormStatus from './changeFormStatus';
 import getItems from './getItems';
@@ -31,7 +31,7 @@ const app = () => {
         feeds: [],
         posts: [],
         status: 'filling',
-        error: null,
+        message: null,
       };
 
       const updateFeedInfo = (feed, posts, watchedState, url) => {
@@ -50,8 +50,8 @@ const app = () => {
                 const [updatedFeed, posts] = getItems(feeds, data, url);
                 updateFeedInfo(updatedFeed, posts, watchedState, url);
               });
-            }).catch(() => {
             })
+            .catch(() => {})
             .finally(() => {
               setTimeout(() => updateFeeds(watchedState), 5000);
             });
@@ -74,19 +74,26 @@ const app = () => {
                 break;
               }
               case 'error': {
+                renderMessage(i18next.t(watchedState.message),
+                  watchedState.status,
+                  elements.feedback,
+                  elements.input);
                 break;
               }
               case 'loaded': {
                 changeFormStatus(elements.input, elements.button, watchedState.status);
+                renderMessage(
+                  i18next.t(watchedState.message),
+                  watchedState.status,
+                  elements.feedback,
+                  elements.input,
+                );
                 break;
               }
               default: {
                 console.log(`Unknown order state: '${value}'!`);
               }
             }
-            break;
-          }
-          case 'feeds': {
             break;
           }
           case 'posts': {
@@ -102,35 +109,24 @@ const app = () => {
       const formHandler = (url) => {
         validateUrl(url, state.feeds).then((result) => {
           if (url === result) {
-            watchedState.feeds = [{ url }, ...watchedState.feeds];
+            state.feeds = [{ url }, ...watchedState.feeds];
             watchedState.status = 'loading';
             getData(url)
               .then((data) => {
+                state.message = 'loaded';
                 watchedState.status = 'loaded';
-                // watchedState.error =
-                renderMessage(
-                  i18next.t('loaded'),
-                  watchedState.status,
-                  elements.feedback,
-                  elements.input,
-                );
                 watchedState.status = 'filling';
                 const [feed, posts] = getItems(watchedState.feeds, data, url);
                 updateFeedInfo(feed, posts, watchedState, url);
               })
               .catch((err) => {
+                state.message = err.message;
                 watchedState.status = 'error';
-                renderMessage(err.message, watchedState.status, elements.feedback, elements.input);
                 watchedState.status = 'filling';
               });
           } else {
+            state.message = result;
             watchedState.status = 'error';
-            renderMessage(
-              i18next.t(result),
-              watchedState.status,
-              elements.feedback,
-              elements.input,
-            );
           }
         });
       };

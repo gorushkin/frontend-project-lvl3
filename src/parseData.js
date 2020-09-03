@@ -5,6 +5,7 @@ export default (data) => {
   const feedLink = parsedData.querySelector('link').textContent;
   const feedPubDate = parsedData.querySelector('pubDate').textContent;
   const feed = { title: feedTitle, link: feedLink, pubDate: feedPubDate };
+
   const postList = parsedData.querySelectorAll('item');
   const posts = Array.prototype.slice.call(postList).map((feedItem) => {
     const title = feedItem.querySelector('title').textContent;
