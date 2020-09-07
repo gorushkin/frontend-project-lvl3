@@ -3,20 +3,14 @@ import parseData from './parseData';
 
 const comparator = (newPost, oldPost) => newPost.guid === oldPost.guid;
 
-export default (watchedState, data, url) => {
-  const { feeds, posts: oldPosts } = watchedState;
+export default (watchedState, data, url, feedId) => {
+  const { posts: oldPosts } = watchedState;
   const { feed, posts } = parseData(data);
-  const feedIndex = _.findIndex(feeds, { url });
-  const currentFeed = { ...feeds[feedIndex] };
-  const id = currentFeed.id ? currentFeed.id : _.uniqueId();
+  const id = feedId || _.uniqueId();
   const postsWithId = posts.map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
 
-  const updatedCurrentFeed = {
-    ...currentFeed,
-    ...feed,
-    id,
-  };
+  const currentFeed = { ...feed, id, url };
 
   const newPosts = _.differenceWith(postsWithId, oldPosts, comparator);
-  return { updatedCurrentFeed, newPosts };
+  return { currentFeed, newPosts };
 };

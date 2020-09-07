@@ -2,7 +2,6 @@
 
 import onChange from 'on-change';
 import i18next from 'i18next';
-import _ from 'lodash';
 import validateUrl from './validateUrl';
 import renderFeeds from './renderFeeds';
 import getItems from './getItems';
@@ -43,20 +42,16 @@ const app = () => {
         elements.feedback.innerHTML = message;
       };
 
-      const updateFeedInfo = (feed, posts, watchedState, url) => {
-        const feedIndex = _.findIndex(watchedState.feeds, { url });
-        onChange.target(watchedState).feeds[feedIndex] = feed;
-        watchedState.posts = [...posts, ...watchedState.posts];
-      };
-
       const updateFeeds = (watchedState) => {
         const { feeds } = watchedState;
         if (feeds.length > 0 && watchedState.status !== 'loading') {
-          const promises = feeds.map(({ url }) => getData(url).then((data) => ({ data, url })));
+          const promises = feeds
+            .map(({ url, id }) => getData(url)
+              .then((data) => ({ data, url, id })));
           Promise.all(promises)
             .then((response) => {
-              response.forEach(({ data, url }) => {
-                const { newPosts } = getItems(watchedState, data, url);
+              response.forEach(({ data, url, id }) => {
+                const { newPosts } = getItems(watchedState, data, url, id);
                 watchedState.posts = [...newPosts, ...watchedState.posts];
               });
             })
@@ -118,13 +113,9 @@ const app = () => {
             getData(url)
               .then((data) => {
                 watchedState.status = 'loaded';
-                state.feeds = [{ url }, ...watchedState.feeds];
-                const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
-                  watchedState,
-                  data,
-                  url,
-                );
-                updateFeedInfo(feed, posts, watchedState, url);
+                const { currentFeed: feed, newPosts: posts } = getItems(watchedState, data, url);
+                state.feeds = [feed, ...state.feeds];
+                watchedState.posts = [...posts, ...watchedState.posts];
               })
               .catch((err) => {
                 state.error = err.message;
