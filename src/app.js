@@ -32,16 +32,6 @@ const app = () => {
         error: '',
       };
 
-      const blockForm = () => {
-        elements.input.disabled = true;
-        elements.button.disabled = true;
-      };
-
-      const unblockForm = () => {
-        elements.input.disabled = false;
-        elements.button.disabled = false;
-      };
-
       const renderFeedback = (message) => {
         if (state.status === 'error') {
           elements.input.classList.add('is-invalid');
@@ -83,22 +73,26 @@ const app = () => {
           case 'status': {
             switch (value) {
               case 'waiting': {
-                elements.form.reset();
-                unblockForm();
+                elements.input.disabled = false;
+                elements.button.disabled = false;
                 break;
               }
               case 'loading': {
-                blockForm();
+                elements.input.disabled = true;
+                elements.button.disabled = true;
                 break;
               }
               case 'error': {
                 renderFeedback(i18next.t(watchedState.error));
+                elements.input.disabled = false;
+                elements.button.disabled = false;
                 break;
               }
               case 'loaded': {
-                unblockForm();
-                renderFeedback(i18next.t(watchedState.error));
-
+                elements.input.disabled = false;
+                elements.button.disabled = false;
+                elements.form.reset();
+                renderFeedback(i18next.t('loaded'));
                 break;
               }
               default: {
@@ -119,28 +113,23 @@ const app = () => {
 
       const formHandler = (url) => {
         validateUrl(url, state.feeds)
-          .then((result) => {
-            if (url === result) {
-              watchedState.status = 'loading';
-              getData(url)
-                .then((data) => {
-                  state.error = 'loaded';
-                  watchedState.status = 'loaded';
-                  watchedState.status = 'waiting';
-                  state.feeds = [{ url }, ...watchedState.feeds];
-                  const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
-                    watchedState,
-                    data,
-                    url,
-                  );
-                  updateFeedInfo(feed, posts, watchedState, url);
-                })
-                .catch((err) => {
-                  state.error = err.message;
-                  watchedState.status = 'error';
-                  watchedState.status = 'waiting';
-                });
-            }
+          .then(() => {
+            watchedState.status = 'loading';
+            getData(url)
+              .then((data) => {
+                watchedState.status = 'loaded';
+                state.feeds = [{ url }, ...watchedState.feeds];
+                const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
+                  watchedState,
+                  data,
+                  url,
+                );
+                updateFeedInfo(feed, posts, watchedState, url);
+              })
+              .catch((err) => {
+                state.error = err.message;
+                watchedState.status = 'error';
+              });
           })
           .catch((error) => {
             state.error = error.message;
@@ -149,6 +138,7 @@ const app = () => {
       };
 
       elements.form.addEventListener('submit', (e) => {
+        watchedState.status = 'waiting';
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
