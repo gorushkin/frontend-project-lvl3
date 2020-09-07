@@ -4,9 +4,7 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import _ from 'lodash';
 import validateUrl from './validateUrl';
-import renderFeedback from './renderFeedback';
 import renderFeeds from './renderFeeds';
-import * as changeFormStatus from './changeFormStatus';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -31,7 +29,28 @@ const app = () => {
         feeds: [],
         posts: [],
         status: 'waiting',
-        feedback: '',
+        error: '',
+      };
+
+      const blockForm = () => {
+        elements.input.disabled = true;
+        elements.button.disabled = true;
+      };
+
+      const unblockForm = () => {
+        elements.input.disabled = false;
+        elements.button.disabled = false;
+      };
+
+      const renderFeedback = (message) => {
+        if (state.status === 'error') {
+          elements.input.classList.add('is-invalid');
+          elements.feedback.classList.add('text-danger');
+        } else {
+          elements.input.classList.remove('is-invalid');
+          elements.feedback.classList.remove('text-danger');
+        }
+        elements.feedback.innerHTML = message;
       };
 
       const updateFeedInfo = (feed, posts, watchedState, url) => {
@@ -65,28 +84,21 @@ const app = () => {
             switch (value) {
               case 'waiting': {
                 elements.form.reset();
-                changeFormStatus.unblock(elements.input, elements.button);
+                unblockForm();
                 break;
               }
               case 'loading': {
-                changeFormStatus.block(elements.input, elements.button);
+                blockForm();
                 break;
               }
               case 'error': {
-                renderFeedback(i18next.t(watchedState.feedback),
-                  watchedState.status,
-                  elements.feedback,
-                  elements.input);
+                renderFeedback(i18next.t(watchedState.error));
                 break;
               }
               case 'loaded': {
-                changeFormStatus.unblock(elements.input, elements.button);
-                renderFeedback(
-                  i18next.t(watchedState.feedback),
-                  watchedState.status,
-                  elements.feedback,
-                  elements.input,
-                );
+                unblockForm();
+                renderFeedback(i18next.t(watchedState.error));
+
                 break;
               }
               default: {
@@ -109,13 +121,13 @@ const app = () => {
         validateUrl(url, state.feeds)
           .then((result) => {
             if (url === result) {
-              state.feeds = [{ url }, ...watchedState.feeds];
               watchedState.status = 'loading';
               getData(url)
                 .then((data) => {
-                  state.feedback = 'loaded';
+                  state.error = 'loaded';
                   watchedState.status = 'loaded';
                   watchedState.status = 'waiting';
+                  state.feeds = [{ url }, ...watchedState.feeds];
                   const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
                     watchedState,
                     data,
@@ -124,14 +136,14 @@ const app = () => {
                   updateFeedInfo(feed, posts, watchedState, url);
                 })
                 .catch((err) => {
-                  state.feedback = err.message;
+                  state.error = err.message;
                   watchedState.status = 'error';
                   watchedState.status = 'waiting';
                 });
             }
           })
           .catch((error) => {
-            state.feedback = error.message;
+            state.error = error.message;
             watchedState.status = 'error';
           });
       };
