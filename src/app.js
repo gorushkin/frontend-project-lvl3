@@ -1,9 +1,7 @@
-/* eslint no-param-reassign: "error" */
-
 import onChange from 'on-change';
 import i18next from 'i18next';
 import validateUrl from './validateUrl';
-import renderFeeds from './renderFeeds';
+import getRenderedFeeds from './renderFeeds';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -42,27 +40,6 @@ const app = () => {
         elements.feedback.innerHTML = message;
       };
 
-      const updateFeeds = (watchedState) => {
-        const { feeds } = watchedState;
-        if (feeds.length > 0 && watchedState.status !== 'loading') {
-          const promises = feeds
-            .map(({ url, id }) => getData(url)
-              .then((data) => ({ data, url, id })));
-          Promise.all(promises)
-            .then((response) => {
-              response.forEach(({ data, url, id }) => {
-                const { postsWithId: posts } = getItems(watchedState, data, url, id);
-                watchedState.posts = [...posts, ...watchedState.posts];
-              });
-            })
-            .finally(() => {
-              setTimeout(() => updateFeeds(watchedState), 5000);
-            });
-        } else {
-          setTimeout(() => updateFeeds(watchedState), 5000);
-        }
-      };
-
       const watchedState = onChange(state, (path, value) => {
         switch (path) {
           case 'status': {
@@ -97,7 +74,7 @@ const app = () => {
             break;
           }
           case 'posts': {
-            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
+            elements.feeds.innerHTML = getRenderedFeeds(watchedState.feeds, watchedState.posts);
             break;
           }
           default: {
@@ -106,6 +83,27 @@ const app = () => {
         }
       });
 
+      const updateFeeds = () => {
+        const { feeds } = watchedState;
+        if (feeds.length > 0 && watchedState.status !== 'loading') {
+          const promises = feeds
+            .map(({ url, id }) => getData(url)
+              .then((data) => ({ data, url, id })));
+          Promise.all(promises)
+            .then((response) => {
+              response.forEach(({ data, url, id }) => {
+                const { postsWithId: posts } = getItems(watchedState.posts, data, url, id);
+                watchedState.posts = [...posts, ...watchedState.posts];
+              });
+            })
+            .finally(() => {
+              setTimeout(() => updateFeeds(watchedState), 5000);
+            });
+        } else {
+          setTimeout(() => updateFeeds(watchedState), 5000);
+        }
+      };
+
       const formHandler = (url) => {
         validateUrl(url, state.feeds)
           .then(() => {
@@ -113,7 +111,11 @@ const app = () => {
             getData(url)
               .then((data) => {
                 watchedState.status = 'loaded';
-                const { currentFeed: feed, postsWithId: posts } = getItems(watchedState, data, url);
+                const { currentFeed: feed, postsWithId: posts } = getItems(
+                  watchedState.posts,
+                  data,
+                  url,
+                );
                 state.feeds = [feed, ...state.feeds];
                 watchedState.posts = [...posts, ...watchedState.posts];
               })

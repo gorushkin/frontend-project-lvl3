@@ -3,8 +3,7 @@ import parseData from './parseData';
 
 const comparator = (newPost, oldPost) => newPost.guid === oldPost.guid;
 
-export default (watchedState, data, url, feedId) => {
-  const { posts: oldPosts } = watchedState;
+export default (oldPosts, data, url, feedId) => {
   const { feed, posts } = parseData(data);
   const id = feedId || _.uniqueId();
 
