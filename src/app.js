@@ -15,7 +15,7 @@ const app = () => {
       lng: 'en',
       resources,
     })
-    .then(() => {
+    .then((t) => {
       const elements = {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
@@ -78,7 +78,7 @@ const app = () => {
                 break;
               }
               case 'error': {
-                renderFeedback(i18next.t(watchedState.error));
+                renderFeedback(t(watchedState.error));
                 elements.input.disabled = false;
                 elements.button.disabled = false;
                 break;
@@ -87,7 +87,7 @@ const app = () => {
                 elements.input.disabled = false;
                 elements.button.disabled = false;
                 elements.form.reset();
-                renderFeedback(i18next.t('loaded'));
+                renderFeedback(t('loaded'));
                 break;
               }
               default: {
