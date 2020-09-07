@@ -5,6 +5,5 @@ export default (url, feeds) => {
   const schema = yup.string().url('invalid').notOneOf(urlList, 'exist');
   return schema
     .validate(url)
-    .then((result) => result)
-    .catch((error) => error.message);
+    .then((result) => result);
 };

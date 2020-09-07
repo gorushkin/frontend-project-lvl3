@@ -51,7 +51,6 @@ const app = () => {
                 watchedState.posts = [...newPosts, ...watchedState.posts];
               });
             })
-            .catch(() => {})
             .finally(() => {
               setTimeout(() => updateFeeds(watchedState), 5000);
             });
@@ -107,32 +106,34 @@ const app = () => {
       });
 
       const formHandler = (url) => {
-        validateUrl(url, state.feeds).then((result) => {
-          if (url === result) {
-            state.feeds = [{ url }, ...watchedState.feeds];
-            watchedState.status = 'loading';
-            getData(url)
-              .then((data) => {
-                state.feedback = 'loaded';
-                watchedState.status = 'loaded';
-                watchedState.status = 'waiting';
-                const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
-                  watchedState,
-                  data,
-                  url,
-                );
-                updateFeedInfo(feed, posts, watchedState, url);
-              })
-              .catch((err) => {
-                state.feedback = err.message;
-                watchedState.status = 'error';
-                watchedState.status = 'waiting';
-              });
-          } else {
-            state.feedback = result;
+        validateUrl(url, state.feeds)
+          .then((result) => {
+            if (url === result) {
+              state.feeds = [{ url }, ...watchedState.feeds];
+              watchedState.status = 'loading';
+              getData(url)
+                .then((data) => {
+                  state.feedback = 'loaded';
+                  watchedState.status = 'loaded';
+                  watchedState.status = 'waiting';
+                  const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
+                    watchedState,
+                    data,
+                    url,
+                  );
+                  updateFeedInfo(feed, posts, watchedState, url);
+                })
+                .catch((err) => {
+                  state.feedback = err.message;
+                  watchedState.status = 'error';
+                  watchedState.status = 'waiting';
+                });
+            }
+          })
+          .catch((error) => {
+            state.feedback = error.message;
             watchedState.status = 'error';
-          }
-        });
+          });
       };
 
       elements.form.addEventListener('submit', (e) => {
