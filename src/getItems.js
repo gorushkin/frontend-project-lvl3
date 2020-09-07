@@ -7,10 +7,10 @@ export default (watchedState, data, url, feedId) => {
   const { posts: oldPosts } = watchedState;
   const { feed, posts } = parseData(data);
   const id = feedId || _.uniqueId();
-  const postsWithId = posts.map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
 
   const currentFeed = { ...feed, id, url };
 
-  const newPosts = _.differenceWith(postsWithId, oldPosts, comparator);
-  return { currentFeed, newPosts };
+  const newPosts = _.differenceWith(posts, oldPosts, comparator);
+  const postsWithId = newPosts.map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+  return { currentFeed, postsWithId };
 };
