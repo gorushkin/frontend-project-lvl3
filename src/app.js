@@ -1,12 +1,7 @@
-/* eslint no-param-reassign: "error" */
-
 import onChange from 'on-change';
 import i18next from 'i18next';
-import _ from 'lodash';
 import validateUrl from './validateUrl';
-import renderFeedback from './renderFeedback';
-import renderFeeds from './renderFeeds';
-import * as changeFormStatus from './changeFormStatus';
+import getRenderedFeeds from './renderFeeds';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -18,7 +13,7 @@ const app = () => {
       lng: 'en',
       resources,
     })
-    .then(() => {
+    .then((t) => {
       const elements = {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
@@ -31,33 +26,18 @@ const app = () => {
         feeds: [],
         posts: [],
         status: 'waiting',
-        feedback: '',
+        error: '',
       };
 
-      const updateFeedInfo = (feed, posts, watchedState, url) => {
-        const feedIndex = _.findIndex(watchedState.feeds, { url });
-        onChange.target(watchedState).feeds[feedIndex] = feed;
-        watchedState.posts = [...posts, ...watchedState.posts];
-      };
-
-      const updateFeeds = (watchedState) => {
-        const { feeds } = watchedState;
-        if (feeds.length > 0 && watchedState.status !== 'loading') {
-          const promises = feeds.map(({ url }) => getData(url).then((data) => ({ data, url })));
-          Promise.all(promises)
-            .then((response) => {
-              response.forEach(({ data, url }) => {
-                const { newPosts } = getItems(watchedState, data, url);
-                watchedState.posts = [...newPosts, ...watchedState.posts];
-              });
-            })
-            .catch(() => {})
-            .finally(() => {
-              setTimeout(() => updateFeeds(watchedState), 5000);
-            });
+      const renderFeedback = (message) => {
+        if (state.status === 'error') {
+          elements.input.classList.add('is-invalid');
+          elements.feedback.classList.add('text-danger');
         } else {
-          setTimeout(() => updateFeeds(watchedState), 5000);
+          elements.input.classList.remove('is-invalid');
+          elements.feedback.classList.remove('text-danger');
         }
+        elements.feedback.innerHTML = message;
       };
 
       const watchedState = onChange(state, (path, value) => {
@@ -65,29 +45,26 @@ const app = () => {
           case 'status': {
             switch (value) {
               case 'waiting': {
-                elements.form.reset();
-                changeFormStatus.unblock(elements.input, elements.button);
+                elements.input.disabled = false;
+                elements.button.disabled = false;
                 break;
               }
               case 'loading': {
-                changeFormStatus.block(elements.input, elements.button);
+                elements.input.disabled = true;
+                elements.button.disabled = true;
                 break;
               }
               case 'error': {
-                renderFeedback(i18next.t(watchedState.feedback),
-                  watchedState.status,
-                  elements.feedback,
-                  elements.input);
+                renderFeedback(t(watchedState.error));
+                elements.input.disabled = false;
+                elements.button.disabled = false;
                 break;
               }
               case 'loaded': {
-                changeFormStatus.unblock(elements.input, elements.button);
-                renderFeedback(
-                  i18next.t(watchedState.feedback),
-                  watchedState.status,
-                  elements.feedback,
-                  elements.input,
-                );
+                elements.input.disabled = false;
+                elements.button.disabled = false;
+                elements.form.reset();
+                renderFeedback(t('loaded'));
                 break;
               }
               default: {
@@ -97,7 +74,7 @@ const app = () => {
             break;
           }
           case 'posts': {
-            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
+            elements.feeds.innerHTML = getRenderedFeeds(watchedState.feeds, watchedState.posts);
             break;
           }
           default: {
@@ -106,36 +83,55 @@ const app = () => {
         }
       });
 
+      const updateFeeds = () => {
+        const { feeds } = watchedState;
+        if (feeds.length > 0 && watchedState.status !== 'loading') {
+          const promises = feeds
+            .map(({ url, id }) => getData(url)
+              .then((data) => ({ data, url, id })));
+          Promise.all(promises)
+            .then((response) => {
+              response.forEach(({ data, url, id }) => {
+                const { postsWithId: posts } = getItems(watchedState.posts, data, url, id);
+                watchedState.posts = [...posts, ...watchedState.posts];
+              });
+            })
+            .finally(() => {
+              setTimeout(() => updateFeeds(watchedState), 5000);
+            });
+        } else {
+          setTimeout(() => updateFeeds(watchedState), 5000);
+        }
+      };
+
       const formHandler = (url) => {
-        validateUrl(url, state.feeds).then((result) => {
-          if (url === result) {
-            state.feeds = [{ url }, ...watchedState.feeds];
+        validateUrl(url, state.feeds)
+          .then(() => {
             watchedState.status = 'loading';
             getData(url)
               .then((data) => {
-                state.feedback = 'loaded';
                 watchedState.status = 'loaded';
-                watchedState.status = 'waiting';
-                const { updatedCurrentFeed: feed, newPosts: posts } = getItems(
-                  watchedState,
+                const { currentFeed: feed, postsWithId: posts } = getItems(
+                  watchedState.posts,
                   data,
                   url,
                 );
-                updateFeedInfo(feed, posts, watchedState, url);
+                state.feeds = [feed, ...state.feeds];
+                watchedState.posts = [...posts, ...watchedState.posts];
               })
               .catch((err) => {
-                state.feedback = err.message;
+                state.error = err.message;
                 watchedState.status = 'error';
-                watchedState.status = 'waiting';
               });
-          } else {
-            state.feedback = result;
+          })
+          .catch((error) => {
+            state.error = error.message;
             watchedState.status = 'error';
-          }
-        });
+          });
       };
 
       elements.form.addEventListener('submit', (e) => {
+        watchedState.status = 'waiting';
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
