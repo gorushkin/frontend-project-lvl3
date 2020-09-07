@@ -8,7 +8,7 @@ import getData from './getData';
 
 const app = () => {
   const resources = en;
-  i18next
+  return i18next
     .init({
       lng: 'en',
       resources,
@@ -55,7 +55,7 @@ const app = () => {
                 break;
               }
               case 'error': {
-                renderFeedback(t(watchedState.error));
+                renderFeedback(t(state.error));
                 elements.input.disabled = false;
                 elements.button.disabled = false;
                 break;
@@ -74,7 +74,7 @@ const app = () => {
             break;
           }
           case 'posts': {
-            elements.feeds.innerHTML = getRenderedFeeds(watchedState.feeds, watchedState.posts);
+            elements.feeds.innerHTML = getRenderedFeeds(state.feeds, state.posts);
             break;
           }
           default: {
@@ -84,7 +84,7 @@ const app = () => {
       });
 
       const updateFeeds = () => {
-        const { feeds } = watchedState;
+        const { feeds } = state;
         if (feeds.length > 0 && watchedState.status !== 'loading') {
           const promises = feeds
             .map(({ url, id }) => getData(url)
