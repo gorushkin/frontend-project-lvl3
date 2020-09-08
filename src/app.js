@@ -25,46 +25,55 @@ const app = () => {
       const state = {
         feeds: [],
         posts: [],
-        status: 'waiting',
+        formStatus: 'idle',
+        downloadingStatus: 'idle',
         error: '',
       };
 
       const renderFeedback = (message) => {
-        if (state.status === 'error') {
+        if (state.error === message) {
           elements.input.classList.add('is-invalid');
           elements.feedback.classList.add('text-danger');
         } else {
           elements.input.classList.remove('is-invalid');
           elements.feedback.classList.remove('text-danger');
         }
-        elements.feedback.innerHTML = message;
+        elements.feedback.innerHTML = t(message);
       };
 
       const watchedState = onChange(state, (path, value) => {
         switch (path) {
-          case 'status': {
+          case 'formStatus': {
             switch (value) {
-              case 'waiting': {
+              case 'idle': {
                 elements.input.disabled = false;
                 elements.button.disabled = false;
+                elements.form.reset();
                 break;
               }
-              case 'loading': {
+              case 'submitted': {
                 elements.input.disabled = true;
                 elements.button.disabled = true;
                 break;
               }
               case 'error': {
-                renderFeedback(t(state.error));
-                elements.input.disabled = false;
-                elements.button.disabled = false;
+                renderFeedback(state.error);
+                break;
+              }
+              default: {
+                console.log(`Unknown order state: '${value}'!`);
+              }
+            }
+            break;
+          }
+          case 'downloadingStatus': {
+            switch (value) {
+              case 'error': {
+                renderFeedback(state.error);
                 break;
               }
               case 'loaded': {
-                elements.input.disabled = false;
-                elements.button.disabled = false;
-                elements.form.reset();
-                renderFeedback(t('loaded'));
+                renderFeedback('loaded');
                 break;
               }
               default: {
@@ -85,7 +94,7 @@ const app = () => {
 
       const updateFeeds = () => {
         const { feeds } = state;
-        if (feeds.length > 0 && watchedState.status !== 'loading') {
+        if (feeds.length > 0 && watchedState.downloadingStatus !== 'loading') {
           const promises = feeds
             .map(({ url, id }) => getData(url)
               .then((data) => ({ data, url, id })));
@@ -107,10 +116,12 @@ const app = () => {
       const formHandler = (url) => {
         validateUrl(url, state.feeds)
           .then(() => {
-            watchedState.status = 'loading';
+            watchedState.formStatus = 'submitted';
+            state.downloadingStatus = 'loading';
             getData(url)
               .then((data) => {
-                watchedState.status = 'loaded';
+                watchedState.downloadingStatus = 'loaded';
+                watchedState.formStatus = 'idle';
                 const { currentFeed: feed, postsWithId: posts } = getItems(
                   watchedState.posts,
                   data,
@@ -121,17 +132,18 @@ const app = () => {
               })
               .catch((err) => {
                 state.error = err.message;
-                watchedState.status = 'error';
+                watchedState.downloadingStatus = 'error';
               });
           })
-          .catch((error) => {
-            state.error = error.message;
-            watchedState.status = 'error';
+          .catch(({ message }) => {
+            state.error = message;
+            watchedState.formStatus = 'error';
           });
       };
 
       elements.form.addEventListener('submit', (e) => {
-        watchedState.status = 'waiting';
+        state.downloadingStatus = 'idle';
+        state.formStatus = 'idle';
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
