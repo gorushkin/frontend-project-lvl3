@@ -3,7 +3,7 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 import validateUrl from './validateUrl';
-import renderFeeds from './renderFeeds';
+import { renderFeeds, renderPosts } from './renderFeeds';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -22,16 +22,18 @@ const app = () => {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
         feeds: document.querySelector('.feeds'),
+        posts: document.querySelector('.posts'),
         input: document.querySelector('input'),
         button: document.querySelector('button'),
       };
 
       const state = {
-        feeds: [{ title: 'dsfadsf' }],
+        feeds: [],
         posts: [],
         formStatus: 'idle',
         downloadingStatus: 'idle',
         error: '',
+        currentFeed: '',
       };
 
       const updateFeeds = (watchedState) => {
@@ -53,6 +55,16 @@ const app = () => {
         } else {
           setTimeout(() => updateFeeds(watchedState), updateInterval);
         }
+      };
+
+      const changeActveFeedTitle = (id) => {
+        const feedsTitles = [...elements.feeds.querySelectorAll('a')];
+        feedsTitles.forEach((element) => {
+          element.classList.remove('active');
+          if (element.dataset.id === id) {
+            element.classList.add('active');
+          }
+        });
       };
 
       const watchedState = onChange(state, (path, value) => {
@@ -111,10 +123,16 @@ const app = () => {
             break;
           }
           case 'feeds': {
+            renderFeeds(watchedState.feeds, elements.feeds);
             break;
           }
           case 'posts': {
-            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
+            renderPosts(watchedState.posts, watchedState.currentFeed, elements.posts);
+            break;
+          }
+          case 'currentFeed': {
+            renderPosts(watchedState.posts, watchedState.currentFeed, elements.posts);
+            changeActveFeedTitle(watchedState.currentFeed);
             break;
           }
           default: {
@@ -140,6 +158,7 @@ const app = () => {
                   url,
                 );
                 watchedState.feeds = [feed, ...watchedState.feeds];
+                watchedState.currentFeed = feed.id;
                 watchedState.posts = [...posts, ...watchedState.posts];
               })
               .catch((error) => {
@@ -154,12 +173,20 @@ const app = () => {
           });
       };
 
+      elements.feeds.addEventListener('click', (e) => {
+        const { target } = e;
+        if (target.tagName === 'A') {
+          const { id } = target.dataset;
+          watchedState.currentFeed = id;
+        }
+      });
+
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
         formHandler(url);
-        // updateFeeds(watchedState);
+        updateFeeds(watchedState);
       });
     });
 };
