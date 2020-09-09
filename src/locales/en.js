@@ -5,6 +5,7 @@ export default {
       loaded: 'Rss has been loaded',
       exist: 'Rss already exists',
       invalid: 'Rss is invalid',
+      loading: 'Rss is loading',
     },
   },
 };

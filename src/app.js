@@ -10,12 +10,14 @@ import getData from './getData';
 
 const app = () => {
   const resources = en;
+
   return i18next
     .init({
       lng: 'en',
       resources,
     })
     .then((t) => {
+      const updateInterval = 15000;
       const elements = {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
@@ -25,23 +27,11 @@ const app = () => {
       };
 
       const state = {
-        feeds: [],
+        feeds: [{ title: 'dsfadsf' }],
         posts: [],
         formStatus: 'idle',
         downloadingStatus: 'idle',
         error: '',
-      };
-
-      const renderFeedback = (message) => {
-        if (message instanceof Error) {
-          elements.input.classList.add('is-invalid');
-          elements.feedback.classList.add('text-danger');
-          elements.feedback.innerHTML = t(message.message);
-        } else {
-          elements.input.classList.remove('is-invalid');
-          elements.feedback.classList.remove('text-danger');
-          elements.feedback.innerHTML = t(message);
-        }
       };
 
       const updateFeeds = (watchedState) => {
@@ -58,10 +48,10 @@ const app = () => {
               });
             })
             .finally(() => {
-              setTimeout(() => updateFeeds(watchedState), 5000);
+              setTimeout(() => updateFeeds(watchedState), updateInterval);
             });
         } else {
-          setTimeout(() => updateFeeds(watchedState), 5000);
+          setTimeout(() => updateFeeds(watchedState), updateInterval);
         }
       };
 
@@ -72,16 +62,19 @@ const app = () => {
               case 'idle': {
                 elements.input.disabled = false;
                 elements.button.disabled = false;
-                // elements.form.reset();
+                elements.form.reset();
                 break;
               }
-              case 'submitted': {
+              case 'submitting': {
                 elements.input.disabled = true;
                 elements.button.disabled = true;
                 break;
               }
               case 'error': {
-                renderFeedback(watchedState.error);
+                elements.input.disabled = false;
+                elements.button.disabled = false;
+                elements.input.classList.add('is-invalid');
+                elements.feedback.classList.add('text-danger');
                 break;
               }
               default: {
@@ -93,17 +86,31 @@ const app = () => {
           case 'downloadingStatus': {
             switch (value) {
               case 'error': {
-                renderFeedback(watchedState.error);
+                elements.input.classList.add('is-invalid');
+                elements.feedback.classList.add('text-danger');
+                break;
+              }
+              case 'loading': {
+                elements.input.classList.remove('is-invalid');
+                elements.feedback.classList.remove('text-danger');
                 break;
               }
               case 'loaded': {
-                renderFeedback('loaded');
+                elements.input.classList.remove('is-invalid');
+                elements.feedback.classList.remove('text-danger');
                 break;
               }
               default: {
                 console.log(`Unknown order state: '${value}'!`);
               }
             }
+            break;
+          }
+          case 'error': {
+            elements.feedback.innerHTML = t(watchedState.error);
+            break;
+          }
+          case 'feeds': {
             break;
           }
           case 'posts': {
@@ -119,11 +126,13 @@ const app = () => {
       const formHandler = (url) => {
         validateUrl(url, watchedState.feeds)
           .then(() => {
-            watchedState.formStatus = 'submitted';
+            watchedState.formStatus = 'submitting';
             watchedState.downloadingStatus = 'loading';
+            watchedState.error = 'loading';
             getData(url)
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
+                watchedState.error = 'loaded';
                 watchedState.formStatus = 'idle';
                 const { currentFeed: feed, postsWithId: posts } = getItems(
                   watchedState.posts,
@@ -133,27 +142,24 @@ const app = () => {
                 watchedState.feeds = [feed, ...watchedState.feeds];
                 watchedState.posts = [...posts, ...watchedState.posts];
               })
-              .catch((err) => {
-                console.log('err: ', err);
-                watchedState.error = err;
+              .catch((error) => {
+                watchedState.error = error.message;
                 watchedState.downloadingStatus = 'error';
-                watchedState.formStatus = 'idle';
+                watchedState.formStatus = 'error';
               });
           })
           .catch((error) => {
-            watchedState.error = error;
+            watchedState.error = error.message;
             watchedState.formStatus = 'error';
           });
       };
 
       elements.form.addEventListener('submit', (e) => {
-        watchedState.downloadingStatus = 'idle';
-        watchedState.formStatus = 'idle';
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
         formHandler(url);
-        updateFeeds(watchedState);
+        // updateFeeds(watchedState);
       });
     });
 };
