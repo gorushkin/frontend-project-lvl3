@@ -1,7 +1,9 @@
+/* eslint no-param-reassign: "error" */
+
 import onChange from 'on-change';
 import i18next from 'i18next';
 import validateUrl from './validateUrl';
-import getRenderedFeeds from './renderFeeds';
+import renderFeeds from './renderFeeds';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -31,69 +33,19 @@ const app = () => {
       };
 
       const renderFeedback = (message) => {
-        if (state.error === message) {
+        if (message instanceof Error) {
           elements.input.classList.add('is-invalid');
           elements.feedback.classList.add('text-danger');
+          elements.feedback.innerHTML = t(message.message);
         } else {
           elements.input.classList.remove('is-invalid');
           elements.feedback.classList.remove('text-danger');
+          elements.feedback.innerHTML = t(message);
         }
-        elements.feedback.innerHTML = t(message);
       };
 
-      const watchedState = onChange(state, (path, value) => {
-        switch (path) {
-          case 'formStatus': {
-            switch (value) {
-              case 'idle': {
-                elements.input.disabled = false;
-                elements.button.disabled = false;
-                elements.form.reset();
-                break;
-              }
-              case 'submitted': {
-                elements.input.disabled = true;
-                elements.button.disabled = true;
-                break;
-              }
-              case 'error': {
-                renderFeedback(state.error);
-                break;
-              }
-              default: {
-                console.log(`Unknown order state: '${value}'!`);
-              }
-            }
-            break;
-          }
-          case 'downloadingStatus': {
-            switch (value) {
-              case 'error': {
-                renderFeedback(state.error);
-                break;
-              }
-              case 'loaded': {
-                renderFeedback('loaded');
-                break;
-              }
-              default: {
-                console.log(`Unknown order state: '${value}'!`);
-              }
-            }
-            break;
-          }
-          case 'posts': {
-            elements.feeds.innerHTML = getRenderedFeeds(state.feeds, state.posts);
-            break;
-          }
-          default: {
-            console.log(`Unknown order state: '${path}'!`);
-          }
-        }
-      });
-
-      const updateFeeds = () => {
-        const { feeds } = state;
+      const updateFeeds = (watchedState) => {
+        const { feeds } = watchedState;
         if (feeds.length > 0 && watchedState.downloadingStatus !== 'loading') {
           const promises = feeds
             .map(({ url, id }) => getData(url)
@@ -113,11 +65,62 @@ const app = () => {
         }
       };
 
+      const watchedState = onChange(state, (path, value) => {
+        switch (path) {
+          case 'formStatus': {
+            switch (value) {
+              case 'idle': {
+                elements.input.disabled = false;
+                elements.button.disabled = false;
+                // elements.form.reset();
+                break;
+              }
+              case 'submitted': {
+                elements.input.disabled = true;
+                elements.button.disabled = true;
+                break;
+              }
+              case 'error': {
+                renderFeedback(watchedState.error);
+                break;
+              }
+              default: {
+                console.log(`Unknown order state: '${value}'!`);
+              }
+            }
+            break;
+          }
+          case 'downloadingStatus': {
+            switch (value) {
+              case 'error': {
+                renderFeedback(watchedState.error);
+                break;
+              }
+              case 'loaded': {
+                renderFeedback('loaded');
+                break;
+              }
+              default: {
+                console.log(`Unknown order state: '${value}'!`);
+              }
+            }
+            break;
+          }
+          case 'posts': {
+            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
+            break;
+          }
+          default: {
+            console.log(`Unknown order state: '${path}'!`);
+          }
+        }
+      });
+
       const formHandler = (url) => {
-        validateUrl(url, state.feeds)
+        validateUrl(url, watchedState.feeds)
           .then(() => {
             watchedState.formStatus = 'submitted';
-            state.downloadingStatus = 'loading';
+            watchedState.downloadingStatus = 'loading';
             getData(url)
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
@@ -127,23 +130,25 @@ const app = () => {
                   data,
                   url,
                 );
-                state.feeds = [feed, ...state.feeds];
+                watchedState.feeds = [feed, ...watchedState.feeds];
                 watchedState.posts = [...posts, ...watchedState.posts];
               })
               .catch((err) => {
-                state.error = err.message;
+                console.log('err: ', err);
+                watchedState.error = err;
                 watchedState.downloadingStatus = 'error';
+                watchedState.formStatus = 'idle';
               });
           })
-          .catch(({ message }) => {
-            state.error = message;
+          .catch((error) => {
+            watchedState.error = error;
             watchedState.formStatus = 'error';
           });
       };
 
       elements.form.addEventListener('submit', (e) => {
-        state.downloadingStatus = 'idle';
-        state.formStatus = 'idle';
+        watchedState.downloadingStatus = 'idle';
+        watchedState.formStatus = 'idle';
         e.preventDefault();
         const formData = new FormData(e.target);
         const url = formData.get('url');
