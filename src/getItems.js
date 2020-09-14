@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import parseData from './parseData';
 
-const comparator = (newPost, oldPost) => newPost.guid === oldPost.guid;
+const comparator = (newPost, oldPost) => newPost.link === oldPost.link;
 
 export default (oldPosts, data, url, feedId) => {
   const { feed, posts } = parseData(data);

@@ -3,8 +3,7 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 import validateUrl from './validateUrl';
-// import { renderFeeds, renderPosts } from './renderFeeds';
-import renderFeeds from './renderFeeds';
+import { renderFeeds, renderPosts } from './renderFeeds';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -79,13 +78,18 @@ const app = () => {
                 break;
               }
               default: {
-                console.log(`Unknown order state: '${value}'!`);
+                throw new Error(`Unknown order state: '${value}'!`);
               }
             }
             break;
           }
           case 'downloadingStatus': {
             switch (value) {
+              case 'idle': {
+                elements.input.classList.remove('is-invalid');
+                elements.feedback.classList.remove('text-danger');
+                break;
+              }
               case 'error': {
                 elements.input.classList.add('is-invalid');
                 elements.feedback.classList.add('text-danger');
@@ -94,15 +98,17 @@ const app = () => {
               case 'loading': {
                 elements.input.classList.remove('is-invalid');
                 elements.feedback.classList.remove('text-danger');
+                elements.feedback.innerHTML = t('loading');
                 break;
               }
               case 'loaded': {
                 elements.input.classList.remove('is-invalid');
                 elements.feedback.classList.remove('text-danger');
+                elements.feedback.innerHTML = t('loaded');
                 break;
               }
               default: {
-                console.log(`Unknown order state: '${value}'!`);
+                throw new Error(`Unknown order state: '${value}'!`);
               }
             }
             break;
@@ -112,14 +118,15 @@ const app = () => {
             break;
           }
           case 'feeds': {
+            renderFeeds(watchedState.feeds, elements.feeds);
             break;
           }
           case 'posts': {
-            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
+            renderPosts(watchedState.feeds, watchedState.posts);
             break;
           }
           default: {
-            console.log(`Unknown order state: '${path}'!`);
+            throw new Error(`Unknown order state: '${path}'!`);
           }
         }
       });
@@ -129,11 +136,9 @@ const app = () => {
           .then(() => {
             watchedState.formStatus = 'submitting';
             watchedState.downloadingStatus = 'loading';
-            watchedState.error = 'loading';
             getData(url)
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
-                watchedState.error = 'loaded';
                 watchedState.formStatus = 'idle';
                 const { currentFeed: feed, postsWithId: posts } = getItems(
                   watchedState.posts,
@@ -141,7 +146,6 @@ const app = () => {
                   url,
                 );
                 watchedState.feeds = [feed, ...watchedState.feeds];
-                watchedState.currentFeed = feed.id;
                 watchedState.posts = [...posts, ...watchedState.posts];
               })
               .catch((error) => {
