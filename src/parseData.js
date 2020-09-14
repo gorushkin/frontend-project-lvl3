@@ -12,13 +12,11 @@ export default (data) => {
     const link = feedItem.querySelector('link').textContent;
     const description = feedItem.querySelector('description').textContent;
     const pubDate = feedItem.querySelector('pubDate').textContent;
-    const guid = feedItem.querySelector('guid').textContent;
     return {
       title,
       link,
       description,
       pubDate,
-      guid,
     };
   });
   return { feed, posts };

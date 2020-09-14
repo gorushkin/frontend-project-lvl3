@@ -22,7 +22,6 @@ const app = () => {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
         feeds: document.querySelector('.feeds'),
-        posts: document.querySelector('.posts'),
         input: document.querySelector('input'),
         button: document.querySelector('button'),
       };
@@ -33,7 +32,6 @@ const app = () => {
         formStatus: 'idle',
         downloadingStatus: 'idle',
         error: '',
-        currentFeed: '',
       };
 
       const updateFeeds = (watchedState) => {
@@ -55,16 +53,6 @@ const app = () => {
         } else {
           setTimeout(() => updateFeeds(watchedState), updateInterval);
         }
-      };
-
-      const changeActveFeedTitle = (id) => {
-        const feedsTitles = [...elements.feeds.querySelectorAll('a')];
-        feedsTitles.forEach((element) => {
-          element.classList.remove('active');
-          if (element.dataset.id === id) {
-            element.classList.add('active');
-          }
-        });
       };
 
       const watchedState = onChange(state, (path, value) => {
@@ -90,13 +78,18 @@ const app = () => {
                 break;
               }
               default: {
-                console.log(`Unknown order state: '${value}'!`);
+                throw new Error(`Unknown order state: '${value}'!`);
               }
             }
             break;
           }
           case 'downloadingStatus': {
             switch (value) {
+              case 'idle': {
+                elements.input.classList.remove('is-invalid');
+                elements.feedback.classList.remove('text-danger');
+                break;
+              }
               case 'error': {
                 elements.input.classList.add('is-invalid');
                 elements.feedback.classList.add('text-danger');
@@ -105,15 +98,17 @@ const app = () => {
               case 'loading': {
                 elements.input.classList.remove('is-invalid');
                 elements.feedback.classList.remove('text-danger');
+                elements.feedback.innerHTML = t('loading');
                 break;
               }
               case 'loaded': {
                 elements.input.classList.remove('is-invalid');
                 elements.feedback.classList.remove('text-danger');
+                elements.feedback.innerHTML = t('loaded');
                 break;
               }
               default: {
-                console.log(`Unknown order state: '${value}'!`);
+                throw new Error(`Unknown order state: '${value}'!`);
               }
             }
             break;
@@ -127,16 +122,11 @@ const app = () => {
             break;
           }
           case 'posts': {
-            renderPosts(watchedState.posts, watchedState.currentFeed, elements.posts);
-            break;
-          }
-          case 'currentFeed': {
-            renderPosts(watchedState.posts, watchedState.currentFeed, elements.posts);
-            changeActveFeedTitle(watchedState.currentFeed);
+            renderPosts(watchedState.feeds, watchedState.posts);
             break;
           }
           default: {
-            console.log(`Unknown order state: '${path}'!`);
+            throw new Error(`Unknown order state: '${path}'!`);
           }
         }
       });
@@ -146,11 +136,9 @@ const app = () => {
           .then(() => {
             watchedState.formStatus = 'submitting';
             watchedState.downloadingStatus = 'loading';
-            watchedState.error = 'loading';
             getData(url)
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
-                watchedState.error = 'loaded';
                 watchedState.formStatus = 'idle';
                 const { currentFeed: feed, postsWithId: posts } = getItems(
                   watchedState.posts,
@@ -158,7 +146,6 @@ const app = () => {
                   url,
                 );
                 watchedState.feeds = [feed, ...watchedState.feeds];
-                watchedState.currentFeed = feed.id;
                 watchedState.posts = [...posts, ...watchedState.posts];
               })
               .catch((error) => {
@@ -172,14 +159,6 @@ const app = () => {
             watchedState.formStatus = 'error';
           });
       };
-
-      elements.feeds.addEventListener('click', (e) => {
-        const { target } = e;
-        if (target.tagName === 'A') {
-          const { id } = target.dataset;
-          watchedState.currentFeed = id;
-        }
-      });
 
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
