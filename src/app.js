@@ -3,7 +3,8 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 import validateUrl from './validateUrl';
-import { renderFeeds, renderPosts } from './renderFeeds';
+// import { renderFeeds, renderPosts } from './renderFeeds';
+import renderFeeds from './renderFeeds';
 import getItems from './getItems';
 import { en } from './locales';
 import getData from './getData';
@@ -22,7 +23,6 @@ const app = () => {
         form: document.querySelector('.rss-form'),
         feedback: document.querySelector('.feedback'),
         feeds: document.querySelector('.feeds'),
-        posts: document.querySelector('.posts'),
         input: document.querySelector('input'),
         button: document.querySelector('button'),
       };
@@ -33,7 +33,6 @@ const app = () => {
         formStatus: 'idle',
         downloadingStatus: 'idle',
         error: '',
-        currentFeed: '',
       };
 
       const updateFeeds = (watchedState) => {
@@ -55,16 +54,6 @@ const app = () => {
         } else {
           setTimeout(() => updateFeeds(watchedState), updateInterval);
         }
-      };
-
-      const changeActveFeedTitle = (id) => {
-        const feedsTitles = [...elements.feeds.querySelectorAll('a')];
-        feedsTitles.forEach((element) => {
-          element.classList.remove('active');
-          if (element.dataset.id === id) {
-            element.classList.add('active');
-          }
-        });
       };
 
       const watchedState = onChange(state, (path, value) => {
@@ -123,16 +112,10 @@ const app = () => {
             break;
           }
           case 'feeds': {
-            renderFeeds(watchedState.feeds, elements.feeds);
             break;
           }
           case 'posts': {
-            renderPosts(watchedState.posts, watchedState.currentFeed, elements.posts);
-            break;
-          }
-          case 'currentFeed': {
-            renderPosts(watchedState.posts, watchedState.currentFeed, elements.posts);
-            changeActveFeedTitle(watchedState.currentFeed);
+            renderFeeds(watchedState.feeds, watchedState.posts, elements.feeds);
             break;
           }
           default: {
@@ -172,14 +155,6 @@ const app = () => {
             watchedState.formStatus = 'error';
           });
       };
-
-      elements.feeds.addEventListener('click', (e) => {
-        const { target } = e;
-        if (target.tagName === 'A') {
-          const { id } = target.dataset;
-          watchedState.currentFeed = id;
-        }
-      });
 
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
