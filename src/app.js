@@ -1,12 +1,13 @@
-/* eslint no-param-reassign: "error" */
-
 import onChange from 'on-change';
 import i18next from 'i18next';
+import _ from 'lodash';
 import validateUrl from './validateUrl';
-import { renderFeeds, renderPosts } from './renderFeeds';
-import getItems from './getItems';
+import { renderFeeds, renderPosts } from './renderers';
+import parseFeeds from './parseFeeds';
 import { en } from './locales';
 import getData from './getData';
+
+const comparator = (newPost, oldPost) => newPost.link === oldPost.link;
 
 const app = () => {
   const resources = en;
@@ -31,7 +32,7 @@ const app = () => {
         posts: [],
         formStatus: 'idle',
         downloadingStatus: 'idle',
-        error: '',
+        error: null,
       };
 
       const updateFeeds = (watchedState) => {
@@ -42,9 +43,12 @@ const app = () => {
               .then((data) => ({ data, url, id })));
           Promise.all(promises)
             .then((response) => {
-              response.forEach(({ data, url, id }) => {
-                const { postsWithId: posts } = getItems(watchedState.posts, data, url, id);
-                watchedState.posts = [...posts, ...watchedState.posts];
+              response.forEach(({ data, id }) => {
+                const { posts } = parseFeeds(data);
+                const newPosts = _.differenceWith(posts, watchedState.posts, comparator);
+                const newPostsWithId = newPosts
+                  .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+                watchedState.posts = [...newPostsWithId, ...watchedState.posts];
               });
             })
             .finally(() => {
@@ -70,7 +74,7 @@ const app = () => {
                 elements.button.disabled = true;
                 break;
               }
-              case 'error': {
+              case 'failed': {
                 elements.input.disabled = false;
                 elements.button.disabled = false;
                 elements.input.classList.add('is-invalid');
@@ -90,7 +94,7 @@ const app = () => {
                 elements.feedback.classList.remove('text-danger');
                 break;
               }
-              case 'error': {
+              case 'failed': {
                 elements.input.classList.add('is-invalid');
                 elements.feedback.classList.add('text-danger');
                 break;
@@ -136,27 +140,29 @@ const app = () => {
           .then(() => {
             watchedState.formStatus = 'submitting';
             watchedState.downloadingStatus = 'loading';
+            watchedState.error = null;
             getData(url)
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
                 watchedState.formStatus = 'idle';
-                const { currentFeed: feed, postsWithId: posts } = getItems(
-                  watchedState.posts,
-                  data,
-                  url,
-                );
-                watchedState.feeds = [feed, ...watchedState.feeds];
-                watchedState.posts = [...posts, ...watchedState.posts];
+                const { feed, posts } = parseFeeds(data);
+                const id = _.uniqueId();
+                const currentFeed = { ...feed, id, url };
+                const postsWithId = posts
+                  .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+                watchedState.feeds = [currentFeed, ...watchedState.feeds];
+                watchedState.posts = [...postsWithId, ...watchedState.posts];
+                watchedState.error = null;
               })
               .catch((error) => {
                 watchedState.error = error.message;
-                watchedState.downloadingStatus = 'error';
-                watchedState.formStatus = 'error';
+                watchedState.downloadingStatus = 'failed';
+                watchedState.formStatus = 'failed';
               });
           })
           .catch((error) => {
             watchedState.error = error.message;
-            watchedState.formStatus = 'error';
+            watchedState.formStatus = 'failed';
           });
       };
 
