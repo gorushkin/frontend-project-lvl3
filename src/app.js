@@ -1,11 +1,13 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
+import _ from 'lodash';
 import validateUrl from './validateUrl';
 import { renderFeeds, renderPosts } from './renderers';
-import getFeedAndPosts from './getFeedAndPosts';
-import getNewPosts from './getNewPosts';
+import parseFeeds from './parseFeeds';
 import { en } from './locales';
 import getData from './getData';
+
+const comparator = (newPost, oldPost) => newPost.link === oldPost.link;
 
 const app = () => {
   const resources = en;
@@ -42,8 +44,11 @@ const app = () => {
           Promise.all(promises)
             .then((response) => {
               response.forEach(({ data, id }) => {
-                const posts = getNewPosts(watchedState.posts, data, id);
-                watchedState.posts = [...posts, ...watchedState.posts];
+                const { posts } = parseFeeds(data);
+                const newPosts = _.differenceWith(posts, watchedState.posts, comparator);
+                const newPostsWithId = newPosts
+                  .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+                watchedState.posts = [...newPostsWithId, ...watchedState.posts];
               });
             })
             .finally(() => {
@@ -140,12 +145,13 @@ const app = () => {
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
                 watchedState.formStatus = 'idle';
-                const { currentFeed: feed, postsWithId: posts } = getFeedAndPosts(
-                  data,
-                  url,
-                );
-                watchedState.feeds = [feed, ...watchedState.feeds];
-                watchedState.posts = [...posts, ...watchedState.posts];
+                const { feed, posts } = parseFeeds(data);
+                const id = _.uniqueId();
+                const currentFeed = { ...feed, id, url };
+                const postsWithId = posts
+                  .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
+                watchedState.feeds = [currentFeed, ...watchedState.feeds];
+                watchedState.posts = [...postsWithId, ...watchedState.posts];
                 watchedState.error = null;
               })
               .catch((error) => {
