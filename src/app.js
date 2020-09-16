@@ -31,7 +31,7 @@ const app = () => {
         posts: [],
         formStatus: 'idle',
         downloadingStatus: 'idle',
-        error: '',
+        error: null,
       };
 
       const updateFeeds = (watchedState) => {
@@ -90,7 +90,7 @@ const app = () => {
                 elements.feedback.classList.remove('text-danger');
                 break;
               }
-              case 'error': {
+              case 'failed': {
                 elements.input.classList.add('is-invalid');
                 elements.feedback.classList.add('text-danger');
                 break;
@@ -113,7 +113,7 @@ const app = () => {
             }
             break;
           }
-          case 'error': {
+          case 'failed': {
             elements.feedback.innerHTML = t(watchedState.error);
             break;
           }
@@ -136,6 +136,7 @@ const app = () => {
           .then(() => {
             watchedState.formStatus = 'submitting';
             watchedState.downloadingStatus = 'loading';
+            watchedState.error = null;
             getData(url)
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
@@ -147,16 +148,17 @@ const app = () => {
                 );
                 watchedState.feeds = [feed, ...watchedState.feeds];
                 watchedState.posts = [...posts, ...watchedState.posts];
+                watchedState.error = null;
               })
               .catch((error) => {
                 watchedState.error = error.message;
-                watchedState.downloadingStatus = 'error';
-                watchedState.formStatus = 'error';
+                watchedState.downloadingStatus = 'failed';
+                watchedState.formStatus = 'failed';
               });
           })
           .catch((error) => {
             watchedState.error = error.message;
-            watchedState.formStatus = 'error';
+            watchedState.formStatus = 'failed';
           });
       };
 
