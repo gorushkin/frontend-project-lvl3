@@ -1,10 +1,9 @@
-/* eslint no-param-reassign: "error" */
-
 import onChange from 'on-change';
 import i18next from 'i18next';
 import validateUrl from './validateUrl';
-import { renderFeeds, renderPosts } from './renderFeeds';
-import getItems from './getItems';
+import { renderFeeds, renderPosts } from './renderers';
+import getFeedAndPosts from './getFeedAndPosts';
+import getNewPosts from './getNewPosts';
 import { en } from './locales';
 import getData from './getData';
 
@@ -42,8 +41,8 @@ const app = () => {
               .then((data) => ({ data, url, id })));
           Promise.all(promises)
             .then((response) => {
-              response.forEach(({ data, url, id }) => {
-                const { postsWithId: posts } = getItems(watchedState.posts, data, url, id);
+              response.forEach(({ data, id }) => {
+                const posts = getNewPosts(watchedState.posts, data, id);
                 watchedState.posts = [...posts, ...watchedState.posts];
               });
             })
@@ -70,7 +69,7 @@ const app = () => {
                 elements.button.disabled = true;
                 break;
               }
-              case 'error': {
+              case 'failed': {
                 elements.input.disabled = false;
                 elements.button.disabled = false;
                 elements.input.classList.add('is-invalid');
@@ -113,7 +112,7 @@ const app = () => {
             }
             break;
           }
-          case 'failed': {
+          case 'error': {
             elements.feedback.innerHTML = t(watchedState.error);
             break;
           }
@@ -141,8 +140,7 @@ const app = () => {
               .then((data) => {
                 watchedState.downloadingStatus = 'loaded';
                 watchedState.formStatus = 'idle';
-                const { currentFeed: feed, postsWithId: posts } = getItems(
-                  watchedState.posts,
+                const { currentFeed: feed, postsWithId: posts } = getFeedAndPosts(
                   data,
                   url,
                 );

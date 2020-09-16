@@ -1,15 +1,11 @@
 import _ from 'lodash';
-import parseData from './parseData';
+import parseFeeds from './parseFeeds';
 
 const comparator = (newPost, oldPost) => newPost.link === oldPost.link;
 
-export default (oldPosts, data, url, feedId) => {
-  const { feed, posts } = parseData(data);
-  const id = feedId || _.uniqueId();
-
-  const currentFeed = { ...feed, id, url };
-
+export default (oldPosts, data, id) => {
+  const { posts } = parseFeeds(data);
   const newPosts = _.differenceWith(posts, oldPosts, comparator);
   const postsWithId = newPosts.map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
-  return { currentFeed, postsWithId };
+  return postsWithId;
 };
