@@ -1,5 +1,3 @@
-/* eslint no-param-reassign: "error" */
-
 export const renderFeeds = (feeds, container) => {
   const feedElements = feeds.map(({ title, id }) => {
     const feedTitle = `<h2>${title}</h2>`;

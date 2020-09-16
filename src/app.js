@@ -7,8 +7,6 @@ import parseFeeds from './parseFeeds';
 import { en } from './locales';
 import getData from './getData';
 
-const comparator = (newPost, oldPost) => newPost.link === oldPost.link;
-
 const app = () => {
   const resources = en;
 
@@ -36,26 +34,26 @@ const app = () => {
       };
 
       const updateFeeds = (watchedState) => {
-        const { feeds } = watchedState;
-        if (feeds.length > 0 && watchedState.downloadingStatus !== 'loading') {
-          const promises = feeds
+        if (watchedState.downloadingStatus === 'loading') {
+          setTimeout(() => updateFeeds(watchedState), updateInterval);
+        } else {
+          const promises = watchedState.feeds
             .map(({ url, id }) => getData(url)
-              .then((data) => ({ data, url, id })));
-          Promise.all(promises)
-            .then((response) => {
-              response.forEach(({ data, id }) => {
+              .then((data) => {
                 const { posts } = parseFeeds(data);
-                const newPosts = _.differenceWith(posts, watchedState.posts, comparator);
+                const newPosts = _.differenceWith(
+                  posts,
+                  watchedState.posts,
+                  (newPost, oldPost) => newPost.link === oldPost.link,
+                );
                 const newPostsWithId = newPosts
                   .map((item) => ({ ...item, id: _.uniqueId(), feedId: id }));
                 watchedState.posts = [...newPostsWithId, ...watchedState.posts];
-              });
-            })
-            .finally(() => {
-              setTimeout(() => updateFeeds(watchedState), updateInterval);
-            });
-        } else {
-          setTimeout(() => updateFeeds(watchedState), updateInterval);
+              }));
+
+          Promise.all(promises).finally(() => {
+            setTimeout(() => updateFeeds(watchedState), updateInterval);
+          });
         }
       };
 
